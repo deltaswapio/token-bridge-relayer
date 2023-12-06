@@ -37,14 +37,14 @@ if (!ethKey) {
 }
 const PK = new Uint8Array(Buffer.from(strip0x(ethKey), "hex"));
 
-function getRpc(rpcEvnVariable: any): ethers.providers.JsonRpcProvider {
+function getRpc(rpcEvnVariable: any): WebSocketProvider {
   const rpc = rpcEvnVariable;
-  if (!rpc || !rpc.startsWith("http")) {
+  if (!rpc || !rpc.startsWith("ws")) {
     console.error("ETH_RPC required!");
     process.exit(1);
   }
-  const provider = new ethers.providers.JsonRpcProvider(rpc);
-  return provider;
+  const websocket = new WebSocketProvider(rpc);
+  return websocket;
 }
 
 // read in config
