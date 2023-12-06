@@ -1,21 +1,21 @@
 import {expect} from "chai";
 import {ethers} from "ethers";
-import {MockGuardians} from "@certusone/wormhole-sdk/lib/cjs/mock";
+import {MockPhylaxs} from "@deltaswapio/deltaswap-sdk/lib/cjs/mock";
 import {
   CHAIN_ID_ETH,
   CHAIN_ID_AVAX,
   tryNativeToHexString,
-} from "@certusone/wormhole-sdk";
+} from "@deltaswapio/deltaswap-sdk";
 import {
   AVAX_HOST,
-  AVAX_WORMHOLE_ADDRESS,
+  AVAX_DELTASWAP_ADDRESS,
   AVAX_BRIDGE_ADDRESS,
-  AVAX_WORMHOLE_GUARDIAN_SET_INDEX,
+  AVAX_DELTASWAP_GUARDIAN_SET_INDEX,
   WAVAX_ADDRESS,
   AVAX_RELAYER_FEE_PRECISION,
   FORK_AVAX_CHAIN_ID,
   ETH_HOST,
-  ETH_WORMHOLE_ADDRESS,
+  ETH_DELTASWAP_ADDRESS,
   ETH_BRIDGE_ADDRESS,
   ETH_RELAYER_FEE_PRECISION,
   WETH_ADDRESS,
@@ -28,7 +28,7 @@ import {
 } from "../helpers/consts";
 import {SwapRateUpdate} from "../helpers/interfaces";
 import {
-  formatWormholeMessageFromReceipt,
+  formatDeltaswapMessageFromReceipt,
   readTokenBridgeRelayerContractAddress,
   readWormUSDContractAddress,
   tokenBridgeTransform,
@@ -38,10 +38,10 @@ import {
 import {
   ITokenBridgeRelayer__factory,
   ITokenBridge__factory,
-  IWormhole__factory,
+  IDeltaswap__factory,
 } from "../src/ethers-contracts";
 import {makeContract} from "../helpers/io";
-import {IWETH__factory} from "@certusone/wormhole-sdk/lib/cjs/ethers-contracts";
+import {IWETH__factory} from "@deltaswapio/deltaswap-sdk/lib/cjs/ethers-contracts";
 
 describe("Token Bridge Relayer", () => {
   // avax wallet
@@ -73,13 +73,13 @@ describe("Token Bridge Relayer", () => {
     ethProvider
   );
 
-  // wormhole contract
-  const avaxWormhole = IWormhole__factory.connect(
-    AVAX_WORMHOLE_ADDRESS,
+  // deltaswap contract
+  const avaxDeltaswap = IDeltaswap__factory.connect(
+    AVAX_DELTASWAP_ADDRESS,
     avaxWallet
   );
-  const ethWormhole = IWormhole__factory.connect(
-    ETH_WORMHOLE_ADDRESS,
+  const ethDeltaswap = IDeltaswap__factory.connect(
+    ETH_DELTASWAP_ADDRESS,
     ethWallet
   );
 
@@ -710,8 +710,8 @@ describe("Token Bridge Relayer", () => {
   });
 
   describe("Test Token Bridge Relayer Business Logic", () => {
-    // simulated guardian that signs wormhole messages
-    const guardians = new MockGuardians(AVAX_WORMHOLE_GUARDIAN_SET_INDEX, [
+    // simulated phylax that signs deltaswap messages
+    const phylaxs = new MockPhylaxs(AVAX_DELTASWAP_GUARDIAN_SET_INDEX, [
       GUARDIAN_PRIVATE_KEY,
     ]);
 
@@ -784,8 +784,8 @@ describe("Token Bridge Relayer", () => {
       const balanceAfter = await avaxWormUsd.balanceOf(avaxWallet.address);
       expect(balanceBefore.sub(balanceAfter).eq(local.transferAmount)).is.true;
 
-      // now grab the Wormhole message
-      const unsignedMessages = await formatWormholeMessageFromReceipt(
+      // now grab the Deltaswap message
+      const unsignedMessages = await formatDeltaswapMessageFromReceipt(
         receipt!,
         CHAIN_ID_AVAX
       );
@@ -793,7 +793,7 @@ describe("Token Bridge Relayer", () => {
 
       // sign the TransferWithPayload message
       local.signedTransferMessage = Uint8Array.from(
-        guardians.addSignatures(unsignedMessages[0], [0])
+        phylaxs.addSignatures(unsignedMessages[0], [0])
       );
       expect(local.signedTransferMessage).is.not.null;
     });
@@ -833,7 +833,7 @@ describe("Token Bridge Relayer", () => {
       );
 
       // Invoke the relayer contract to redeem the transfer, passing the
-      // encoded Wormhole message. Invoke this method using the ethRelayerWallet
+      // encoded Deltaswap message. Invoke this method using the ethRelayerWallet
       // to confirm that the contract handles relayer payouts correctly.
       const receipt = await ethRelayer
         .connect(ethRelayerWallet) // change signer
@@ -851,8 +851,8 @@ describe("Token Bridge Relayer", () => {
         });
       expect(receipt).is.not.null;
 
-      // parse the wormhole message
-      const parsedMessage = await ethWormhole.parseVM(
+      // parse the deltaswap message
+      const parsedMessage = await ethDeltaswap.parseVM(
         local.signedTransferMessage
       );
 
@@ -1022,8 +1022,8 @@ describe("Token Bridge Relayer", () => {
       );
       expect(balanceBefore.sub(balanceAfter).eq(local.transferAmount)).is.true;
 
-      // now grab the Wormhole message
-      const unsignedMessages = await formatWormholeMessageFromReceipt(
+      // now grab the Deltaswap message
+      const unsignedMessages = await formatDeltaswapMessageFromReceipt(
         receipt!,
         CHAIN_ID_ETH
       );
@@ -1031,7 +1031,7 @@ describe("Token Bridge Relayer", () => {
 
       // sign the TransferWithPayload message
       local.signedTransferMessage = Uint8Array.from(
-        guardians.addSignatures(unsignedMessages[0], [0])
+        phylaxs.addSignatures(unsignedMessages[0], [0])
       );
       expect(local.signedTransferMessage).is.not.null;
     });
@@ -1060,7 +1060,7 @@ describe("Token Bridge Relayer", () => {
       expect(nativeSwapQuote.toString()).to.equal("0");
 
       // Invoke the relayer contract to redeem the transfer, passing the
-      // encoded Wormhole message. Invoke this method using the avaxRelayerWallet
+      // encoded Deltaswap message. Invoke this method using the avaxRelayerWallet
       // to confirm that the contract handles relayer payouts correctly.
       const receipt = await avaxRelayer
         .connect(avaxRelayerWallet) // change signer
@@ -1078,8 +1078,8 @@ describe("Token Bridge Relayer", () => {
         });
       expect(receipt).is.not.null;
 
-      // parse the wormhole message
-      const parsedMessage = await avaxWormhole.parseVM(
+      // parse the deltaswap message
+      const parsedMessage = await avaxDeltaswap.parseVM(
         local.signedTransferMessage
       );
 
@@ -1185,7 +1185,7 @@ describe("Token Bridge Relayer", () => {
         )
       );
 
-      // wrap AVAX using the wormhole SDK's WETH factory
+      // wrap AVAX using the deltaswap SDK's WETH factory
       {
         const receipt = await wavax
           .deposit({value: local.transferAmount})
@@ -1239,8 +1239,8 @@ describe("Token Bridge Relayer", () => {
       const balanceAfter = await wavax.balanceOf(avaxWallet.address);
       expect(balanceBefore.sub(balanceAfter).eq(local.transferAmount)).is.true;
 
-      // now grab the Wormhole message
-      const unsignedMessages = await formatWormholeMessageFromReceipt(
+      // now grab the Deltaswap message
+      const unsignedMessages = await formatDeltaswapMessageFromReceipt(
         receipt!,
         CHAIN_ID_AVAX
       );
@@ -1248,7 +1248,7 @@ describe("Token Bridge Relayer", () => {
 
       // sign the TransferWithPayload message
       local.signedTransferMessage = Uint8Array.from(
-        guardians.addSignatures(unsignedMessages[0], [0])
+        phylaxs.addSignatures(unsignedMessages[0], [0])
       );
       expect(local.signedTransferMessage).is.not.null;
     });
@@ -1290,7 +1290,7 @@ describe("Token Bridge Relayer", () => {
       );
 
       // Invoke the relayer contract to redeem the transfer, passing the
-      // encoded Wormhole message. Invoke this method using the ethRelayerWallet
+      // encoded Deltaswap message. Invoke this method using the ethRelayerWallet
       // to confirm that the contract handles relayer payouts correctly.
       const receipt = await ethRelayer
         .connect(ethRelayerWallet) // change signer
@@ -1308,8 +1308,8 @@ describe("Token Bridge Relayer", () => {
         });
       expect(receipt).is.not.null;
 
-      // parse the wormhole message
-      const parsedMessage = await ethWormhole.parseVM(
+      // parse the deltaswap message
+      const parsedMessage = await ethDeltaswap.parseVM(
         local.signedTransferMessage
       );
 
@@ -1553,8 +1553,8 @@ describe("Token Bridge Relayer", () => {
       const balanceAfter = await ethWallet.getBalance();
       expect(balanceBefore.sub(balanceAfter).gte(local.transferAmount)).is.true;
 
-      // now grab the Wormhole message
-      const unsignedMessages = await formatWormholeMessageFromReceipt(
+      // now grab the Deltaswap message
+      const unsignedMessages = await formatDeltaswapMessageFromReceipt(
         receipt!,
         CHAIN_ID_ETH
       );
@@ -1562,7 +1562,7 @@ describe("Token Bridge Relayer", () => {
 
       // sign the TransferWithPayload message
       local.signedTransferMessage = Uint8Array.from(
-        guardians.addSignatures(unsignedMessages[0], [0])
+        phylaxs.addSignatures(unsignedMessages[0], [0])
       );
       expect(local.signedTransferMessage).is.not.null;
     });
@@ -1604,7 +1604,7 @@ describe("Token Bridge Relayer", () => {
       );
 
       // Invoke the relayer contract to redeem the transfer, passing the
-      // encoded Wormhole message. Invoke this method using the avaxRelayerWallet
+      // encoded Deltaswap message. Invoke this method using the avaxRelayerWallet
       // to confirm that the contract handles relayer payouts correctly.
       const receipt = await avaxRelayer
         .connect(avaxRelayerWallet) // change signer
@@ -1622,8 +1622,8 @@ describe("Token Bridge Relayer", () => {
         });
       expect(receipt).is.not.null;
 
-      // parse the wormhole message
-      const parsedMessage = await avaxWormhole.parseVM(
+      // parse the deltaswap message
+      const parsedMessage = await avaxDeltaswap.parseVM(
         local.signedTransferMessage
       );
 
@@ -1790,8 +1790,8 @@ describe("Token Bridge Relayer", () => {
       );
       expect(balanceBefore.sub(balanceAfter).eq(local.transferAmount)).is.true;
 
-      // now grab the Wormhole message
-      const unsignedMessages = await formatWormholeMessageFromReceipt(
+      // now grab the Deltaswap message
+      const unsignedMessages = await formatDeltaswapMessageFromReceipt(
         receipt!,
         CHAIN_ID_AVAX
       );
@@ -1799,7 +1799,7 @@ describe("Token Bridge Relayer", () => {
 
       // sign the TransferWithPayload message
       local.signedTransferMessage = Uint8Array.from(
-        guardians.addSignatures(unsignedMessages[0], [0])
+        phylaxs.addSignatures(unsignedMessages[0], [0])
       );
       expect(local.signedTransferMessage).is.not.null;
     });
@@ -1811,7 +1811,7 @@ describe("Token Bridge Relayer", () => {
       const recipientEthBalanceBefore = await ethWallet.getBalance();
 
       // Invoke the relayer contract to redeem the transfer, passing the
-      // encoded Wormhole message. Invoke this method using the ethRelayerWallet
+      // encoded Deltaswap message. Invoke this method using the ethRelayerWallet
       // to confirm that the contract handles relayer payouts correctly.
       const receipt = await ethRelayer
         .connect(ethRelayerWallet) // change signer
@@ -1827,8 +1827,8 @@ describe("Token Bridge Relayer", () => {
         });
       expect(receipt).is.not.null;
 
-      // parse the wormhole message
-      const parsedMessage = await avaxWormhole.parseVM(
+      // parse the deltaswap message
+      const parsedMessage = await avaxDeltaswap.parseVM(
         local.signedTransferMessage
       );
 
@@ -1939,8 +1939,8 @@ describe("Token Bridge Relayer", () => {
       const balanceAfter = await avaxWormUsd.balanceOf(avaxWallet.address);
       expect(balanceBefore.sub(balanceAfter).eq(local.transferAmount)).is.true;
 
-      // now grab the Wormhole message
-      const unsignedMessages = await formatWormholeMessageFromReceipt(
+      // now grab the Deltaswap message
+      const unsignedMessages = await formatDeltaswapMessageFromReceipt(
         receipt!,
         CHAIN_ID_AVAX
       );
@@ -1948,7 +1948,7 @@ describe("Token Bridge Relayer", () => {
 
       // sign the TransferWithPayload message
       local.signedTransferMessage = Uint8Array.from(
-        guardians.addSignatures(unsignedMessages[0], [0])
+        phylaxs.addSignatures(unsignedMessages[0], [0])
       );
       expect(local.signedTransferMessage).is.not.null;
     });
@@ -1994,8 +1994,8 @@ describe("Token Bridge Relayer", () => {
         });
       expect(receipt).is.not.null;
 
-      // parse the wormhole message
-      const parsedMessage = await ethWormhole.parseVM(
+      // parse the deltaswap message
+      const parsedMessage = await ethDeltaswap.parseVM(
         local.signedTransferMessage
       );
 

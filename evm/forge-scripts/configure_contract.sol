@@ -24,7 +24,7 @@ contract ContractScript is Script {
         bytes32 token
     ) internal view returns (address localAddress) {
         if (tokenChain != tokenBridge.chainId()) {
-            // identify wormhole token bridge wrapper
+            // identify deltaswap token bridge wrapper
             localAddress = tokenBridge.wrappedAsset(tokenChain, token);
             require(localAddress != address(0), "token not attested");
         } else {

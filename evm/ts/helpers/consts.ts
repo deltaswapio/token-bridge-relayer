@@ -10,16 +10,16 @@ export const FORK_AVAX_CHAIN_ID = Number(
 );
 export const FORK_ETH_CHAIN_ID = Number(process.env.TESTING_ETH_FORK_CHAINID!);
 
-// Avalanche wormhole variables
-export const AVAX_WORMHOLE_ADDRESS = process.env.TESTING_AVAX_WORMHOLE_ADDRESS!;
-export const AVAX_WORMHOLE_CHAIN_ID = Number(
-  process.env.TESTING_AVAX_WORMHOLE_CHAINID!
+// Avalanche deltaswap variables
+export const AVAX_DELTASWAP_ADDRESS = process.env.TESTING_AVAX_DELTASWAP_ADDRESS!;
+export const AVAX_DELTASWAP_CHAIN_ID = Number(
+  process.env.TESTING_AVAX_DELTASWAP_CHAINID!
 );
-export const AVAX_WORMHOLE_MESSAGE_FEE = ethers.BigNumber.from(
-  process.env.TESTING_AVAX_WORMHOLE_MESSAGE_FEE!
+export const AVAX_DELTASWAP_MESSAGE_FEE = ethers.BigNumber.from(
+  process.env.TESTING_AVAX_DELTASWAP_MESSAGE_FEE!
 );
-export const AVAX_WORMHOLE_GUARDIAN_SET_INDEX = Number(
-  process.env.TESTING_AVAX_WORMHOLE_GUARDIAN_SET_INDEX!
+export const AVAX_DELTASWAP_GUARDIAN_SET_INDEX = Number(
+  process.env.TESTING_AVAX_DELTASWAP_GUARDIAN_SET_INDEX!
 );
 export const AVAX_BRIDGE_ADDRESS = process.env.TESTING_AVAX_BRIDGE_ADDRESS!;
 export const WAVAX_ADDRESS = process.env.TESTING_WRAPPED_AVAX_ADDRESS!;
@@ -28,16 +28,16 @@ export const AVAX_SWAP_RATE_PRECISION =
 export const AVAX_RELAYER_FEE_PRECISION =
   process.env.TESTING_AVAX_RELAYER_FEE_PRECISION!;
 
-// Ethereum wormhole variables
-export const ETH_WORMHOLE_ADDRESS = process.env.TESTING_ETH_WORMHOLE_ADDRESS!;
-export const ETH_WORMHOLE_CHAIN_ID = Number(
-  process.env.TESTING_ETH_WORMHOLE_CHAINID!
+// Ethereum deltaswap variables
+export const ETH_DELTASWAP_ADDRESS = process.env.TESTING_ETH_DELTASWAP_ADDRESS!;
+export const ETH_DELTASWAP_CHAIN_ID = Number(
+  process.env.TESTING_ETH_DELTASWAP_CHAINID!
 );
-export const ETH_WORMHOLE_MESSAGE_FEE = ethers.BigNumber.from(
-  process.env.TESTING_ETH_WORMHOLE_MESSAGE_FEE!
+export const ETH_DELTASWAP_MESSAGE_FEE = ethers.BigNumber.from(
+  process.env.TESTING_ETH_DELTASWAP_MESSAGE_FEE!
 );
-export const ETH_WORMHOLE_GUARDIAN_SET_INDEX = Number(
-  process.env.TESTING_ETH_WORMHOLE_GUARDIAN_SET_INDEX!
+export const ETH_DELTASWAP_GUARDIAN_SET_INDEX = Number(
+  process.env.TESTING_ETH_DELTASWAP_GUARDIAN_SET_INDEX!
 );
 export const ETH_BRIDGE_ADDRESS = process.env.TESTING_ETH_BRIDGE_ADDRESS!;
 export const WETH_ADDRESS = process.env.TESTING_WRAPPED_ETH_ADDRESS!;
@@ -53,10 +53,10 @@ export const WALLET_PRIVATE_KEY_TWO = process.env.WALLET_PRIVATE_KEY_TWO!;
 export const WALLET_PRIVATE_KEY_THREE = process.env.WALLET_PRIVATE_KEY_THREE!;
 export const WALLET_PRIVATE_KEY_FOUR = process.env.WALLET_PRIVATE_KEY_FOUR!;
 
-// wormhole event ABIs
-export const WORMHOLE_TOPIC =
+// deltaswap event ABIs
+export const DELTASWAP_TOPIC =
   "0x6eb224fb001ed210e379b335e35efe88672a8ce935d981a6896b27ffdf52a3b2";
-export const WORMHOLE_MESSAGE_EVENT_ABI = [
+export const DELTASWAP_MESSAGE_EVENT_ABI = [
   "event LogMessagePublished(address indexed sender, uint64 sequence, uint32 nonce, bytes payload, uint8 consistencyLevel)",
 ];
 

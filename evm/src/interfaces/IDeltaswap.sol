@@ -3,8 +3,8 @@
 
 pragma solidity ^0.8.17;
 
-interface IWormhole {
-    struct GuardianSet {
+interface IDeltaswap {
+    struct PhylaxSet {
         address[] keys;
         uint32 expirationTime;
     }
@@ -13,7 +13,7 @@ interface IWormhole {
         bytes32 r;
         bytes32 s;
         uint8 v;
-        uint8 guardianIndex;
+        uint8 phylaxIndex;
     }
 
     struct VM {
@@ -26,7 +26,7 @@ interface IWormhole {
         uint8 consistencyLevel;
         bytes payload;
 
-        uint32 guardianSetIndex;
+        uint32 phylaxSetIndex;
         Signature[] signatures;
 
         bytes32 hash;
@@ -44,15 +44,15 @@ interface IWormhole {
 
     function verifyVM(VM memory vm) external view returns (bool valid, string memory reason);
 
-    function verifySignatures(bytes32 hash, Signature[] memory signatures, GuardianSet memory guardianSet) external pure returns (bool valid, string memory reason);
+    function verifySignatures(bytes32 hash, Signature[] memory signatures, PhylaxSet memory phylaxSet) external pure returns (bool valid, string memory reason);
 
     function parseVM(bytes memory encodedVM) external pure returns (VM memory vm);
 
-    function getGuardianSet(uint32 index) external view returns (GuardianSet memory);
+    function getPhylaxSet(uint32 index) external view returns (PhylaxSet memory);
 
-    function getCurrentGuardianSetIndex() external view returns (uint32);
+    function getCurrentPhylaxSetIndex() external view returns (uint32);
 
-    function getGuardianSetExpiry() external view returns (uint32);
+    function getPhylaxSetExpiry() external view returns (uint32);
 
     function governanceActionIsConsumed(bytes32 hash) external view returns (bool);
 

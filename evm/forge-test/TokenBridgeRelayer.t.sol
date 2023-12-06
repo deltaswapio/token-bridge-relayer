@@ -5,12 +5,12 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 import {IWETH} from "../src/interfaces/IWETH.sol";
-import {IWormhole} from "../src/interfaces/IWormhole.sol";
+import {IDeltaswap} from "../src/interfaces/IDeltaswap.sol";
 import {ITokenBridge} from "../src/interfaces/ITokenBridge.sol";
 import {ITokenBridgeRelayer} from "../src/interfaces/ITokenBridgeRelayer.sol";
 
-import {WormholeSimulator} from "wormhole-solidity/WormholeSimulator.sol";
-import {ForgeHelpers} from "wormhole-solidity/ForgeHelpers.sol";
+import {DeltaswapSimulator} from "deltaswap-solidity/DeltaswapSimulator.sol";
+import {ForgeHelpers} from "deltaswap-solidity/ForgeHelpers.sol";
 import {TestToken} from "./TestErc20.sol";
 import {Helpers} from "./Helpers.sol";
 
@@ -26,14 +26,14 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
  * test setup.
  */
 contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
-    // guardian private key for simulated signing of Wormhole messages
-    uint256 guardianSigner;
+    // phylax private key for simulated signing of Deltaswap messages
+    uint256 phylaxSigner;
 
     // relayer fee precision
     uint32 relayerFeePrecision;
 
     // ethereum test info
-    uint16 ethereumChainId = uint16(vm.envUint("TESTING_ETH_WORMHOLE_CHAINID"));
+    uint16 ethereumChainId = uint16(vm.envUint("TESTING_ETH_DELTASWAP_CHAINID"));
     address ethereumTokenBridge = vm.envAddress("TESTING_ETH_BRIDGE_ADDRESS");
     address weth = vm.envAddress("TESTING_WRAPPED_ETH_ADDRESS");
     address ethereumRecipient = vm.envAddress("TESTING_ETH_RECIPIENT");
@@ -52,8 +52,8 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
 
     // contract instances
     ITokenBridge bridge = ITokenBridge(vm.envAddress("TESTING_AVAX_BRIDGE_ADDRESS"));
-    IWormhole wormhole;
-    WormholeSimulator wormholeSimulator;
+    IDeltaswap deltaswap;
+    DeltaswapSimulator deltaswapSimulator;
     ITokenBridgeRelayer avaxRelayer;
     ITokenBridgeRelayer altRelayer;
 
@@ -74,30 +74,30 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
         uint256 toNative;
     }
 
-    function setupWormhole() internal {
+    function setupDeltaswap() internal {
         // verify that we're using the correct fork (AVAX mainnet in this case)
         require(block.chainid == vm.envUint("TESTING_AVAX_FORK_CHAINID"), "wrong evm");
 
-        // set up this chain's Wormhole
-        wormholeSimulator = new WormholeSimulator(
-            vm.envAddress("TESTING_AVAX_WORMHOLE_ADDRESS"),
+        // set up this chain's Deltaswap
+        deltaswapSimulator = new DeltaswapSimulator(
+            vm.envAddress("TESTING_AVAX_DELTASWAP_ADDRESS"),
             uint256(vm.envBytes32("GUARDIAN_KEY")));
-        wormhole = wormholeSimulator.wormhole();
+        deltaswap = deltaswapSimulator.deltaswap();
 
-        // verify Wormhole state from fork
+        // verify Deltaswap state from fork
         require(
-            wormhole.chainId() == uint16(vm.envUint("TESTING_AVAX_WORMHOLE_CHAINID")),
+            deltaswap.chainId() == uint16(vm.envUint("TESTING_AVAX_DELTASWAP_CHAINID")),
             "wrong chainId"
         );
         require(
-            wormhole.messageFee() == vm.envUint("TESTING_AVAX_WORMHOLE_MESSAGE_FEE"),
+            deltaswap.messageFee() == vm.envUint("TESTING_AVAX_DELTASWAP_MESSAGE_FEE"),
             "wrong messageFee"
         );
         require(
-            wormhole.getCurrentGuardianSetIndex() == uint32(
-                vm.envUint("TESTING_AVAX_WORMHOLE_GUARDIAN_SET_INDEX")
+            deltaswap.getCurrentPhylaxSetIndex() == uint32(
+                vm.envUint("TESTING_AVAX_DELTASWAP_GUARDIAN_SET_INDEX")
             ),
-            "wrong guardian set index"
+            "wrong phylax set index"
         );
     }
 
@@ -188,11 +188,11 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
     }
 
     /**
-     * @notice Sets up the wormholeSimulator contracts and deploys TokenBridgeRelayer
+     * @notice Sets up the deltaswapSimulator contracts and deploys TokenBridgeRelayer
      * contracts before each test is executed.
      */
     function setUp() public {
-        setupWormhole();
+        setupDeltaswap();
         setupTokenBridgeRelayer();
         setupTokenBridgeRelayerAlternative();
     }
@@ -202,22 +202,22 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
         uint16 emitterChainId,
         bytes32 emitterAddress
     ) internal view returns (bytes memory signedTransfer) {
-        // construct `TransferWithPayload` Wormhole message
-        IWormhole.VM memory vm;
+        // construct `TransferWithPayload` Deltaswap message
+        IDeltaswap.VM memory vm;
 
         // set the vm values inline
         vm.version = uint8(1);
         vm.timestamp = uint32(block.timestamp);
         vm.emitterChainId = emitterChainId;
         vm.emitterAddress = emitterAddress;
-        vm.sequence = wormhole.nextSequence(
+        vm.sequence = deltaswap.nextSequence(
             address(uint160(uint256(emitterAddress)))
         );
         vm.consistencyLevel = bridge.finality();
         vm.payload = bridge.encodeTransferWithPayload(transfer);
 
         // encode the bservation
-        signedTransfer = wormholeSimulator.encodeAndSignMessage(vm);
+        signedTransfer = deltaswapSimulator.encodeAndSignMessage(vm);
     }
 
     /**
@@ -766,30 +766,30 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             denormalizeAmount(normalizeAmount(amount, 18), 18)
         );
 
-        // record the emitted Wormhole message
+        // record the emitted Deltaswap message
         Vm.Log[] memory logs = vm.getRecordedLogs();
         require(logs.length > 0, "no events recorded");
 
-        // find published wormhole messages from log
+        // find published deltaswap messages from log
         Vm.Log[] memory publishedMessages =
-            wormholeSimulator.fetchWormholeMessageFromLog(logs, 1);
+            deltaswapSimulator.fetchDeltaswapMessageFromLog(logs, 1);
 
-        // simulate signing the Wormhole message
-        // NOTE: in the wormhole-sdk, signed Wormhole messages are referred to as signed VAAs
-        bytes memory encodedMessage = wormholeSimulator.fetchSignedMessageFromLogs(
+        // simulate signing the Deltaswap message
+        // NOTE: in the deltaswap-sdk, signed Deltaswap messages are referred to as signed VAAs
+        bytes memory encodedMessage = deltaswapSimulator.fetchSignedMessageFromLogs(
             publishedMessages[0],
             avaxRelayer.chainId(),
             address(avaxRelayer)
         );
 
         // parse and verify the message
-        (IWormhole.VM memory wormholeMessage, bool valid, ) =
-            wormhole.parseAndVerifyVM(encodedMessage);
+        (IDeltaswap.VM memory deltaswapMessage, bool valid, ) =
+            deltaswap.parseAndVerifyVM(encodedMessage);
         require(valid, "failed to verify VAA");
 
         // call the token bridge to parse the TransferWithPayload message
         ITokenBridge.TransferWithPayload memory transfer =
-            bridge.parseTransferWithPayload(wormholeMessage.payload);
+            bridge.parseTransferWithPayload(deltaswapMessage.payload);
 
         /**
          * The token bridge normalizes the transfer amount to support
@@ -811,8 +811,8 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
         assertEq(transfer.amount > 0, true);
 
         // verify VAA values
-        assertEq(wormholeMessage.sequence, sequence);
-        assertEq(wormholeMessage.nonce, 0); // batchID
+        assertEq(deltaswapMessage.sequence, sequence);
+        assertEq(deltaswapMessage.nonce, 0); // batchID
 
         // parse additional payload and verify the values
         ITokenBridgeRelayer.TransferWithRelay memory message =
@@ -1265,30 +1265,30 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             )
         );
 
-        // record the emitted Wormhole message
+        // record the emitted Deltaswap message
         Vm.Log[] memory logs = vm.getRecordedLogs();
         require(logs.length > 0, "no events recorded");
 
-        // find published wormhole messages from log
+        // find published deltaswap messages from log
         Vm.Log[] memory publishedMessages =
-            wormholeSimulator.fetchWormholeMessageFromLog(logs, 1);
+            deltaswapSimulator.fetchDeltaswapMessageFromLog(logs, 1);
 
-        // simulate signing the Wormhole message
-        // NOTE: in the wormhole-sdk, signed Wormhole messages are referred to as signed VAAs
-        bytes memory encodedMessage = wormholeSimulator.fetchSignedMessageFromLogs(
+        // simulate signing the Deltaswap message
+        // NOTE: in the deltaswap-sdk, signed Deltaswap messages are referred to as signed VAAs
+        bytes memory encodedMessage = deltaswapSimulator.fetchSignedMessageFromLogs(
             publishedMessages[0],
             avaxRelayer.chainId(),
             address(avaxRelayer)
         );
 
         // parse and verify the message
-        (IWormhole.VM memory wormholeMessage, bool valid, ) =
-            wormhole.parseAndVerifyVM(encodedMessage);
+        (IDeltaswap.VM memory deltaswapMessage, bool valid, ) =
+            deltaswap.parseAndVerifyVM(encodedMessage);
         require(valid, "failed to verify VAA");
 
         // call the token bridge to parse the TransferWithPayload message
         ITokenBridge.TransferWithPayload memory transfer =
-            bridge.parseTransferWithPayload(wormholeMessage.payload);
+            bridge.parseTransferWithPayload(deltaswapMessage.payload);
 
         /**
          * The token bridge normalizes the transfer amount to support
@@ -1310,8 +1310,8 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
         assertEq(transfer.amount > 0, true);
 
         // verify VAA values
-        assertEq(wormholeMessage.sequence, sequence);
-        assertEq(wormholeMessage.nonce, 0); // batchID
+        assertEq(deltaswapMessage.sequence, sequence);
+        assertEq(deltaswapMessage.nonce, 0); // batchID
 
         // parse additional payload and verify the values
         ITokenBridgeRelayer.TransferWithRelay memory message =
@@ -1455,7 +1455,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             })
         );
 
-        // Create a simulated version of the wormhole message that the
+        // Create a simulated version of the deltaswap message that the
         // relayer contract will emit.
         ITokenBridge.TransferWithPayload memory transfer =
             ITokenBridge.TransferWithPayload({
@@ -1470,7 +1470,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             });
 
         // Encode the TransferWithPayload struct and simulate signing
-        // the message with the devnet guardian key.
+        // the message with the devnet phylax key.
         bytes memory signedMessage = getTransferWithPayloadMessage(
             transfer,
             ethereumChainId,
@@ -1658,7 +1658,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             })
         );
 
-        // Create a simulated version of the wormhole message that the
+        // Create a simulated version of the deltaswap message that the
         // relayer contract will emit.
         ITokenBridge.TransferWithPayload memory transfer =
             ITokenBridge.TransferWithPayload({
@@ -1673,7 +1673,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             });
 
         // Encode the TransferWithPayload struct and simulate signing
-        // the message with the devnet guardian key.
+        // the message with the devnet phylax key.
         bytes memory signedMessage = getTransferWithPayloadMessage(
             transfer,
             ethereumChainId,
@@ -1849,7 +1849,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             })
         );
 
-        // Create a simulated version of the wormhole message that the
+        // Create a simulated version of the deltaswap message that the
         // relayer contract will emit.
         ITokenBridge.TransferWithPayload memory transfer =
             ITokenBridge.TransferWithPayload({
@@ -1864,7 +1864,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             });
 
         // Encode the TransferWithPayload struct and simulate signing
-        // the message with the devnet guardian key.
+        // the message with the devnet phylax key.
         bytes memory signedMessage = getTransferWithPayloadMessage(
             transfer,
             ethereumChainId,
@@ -2009,7 +2009,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             })
         );
 
-        // Create a simulated version of the wormhole message that the
+        // Create a simulated version of the deltaswap message that the
         // relayer contract will emit.
         ITokenBridge.TransferWithPayload memory transfer =
             ITokenBridge.TransferWithPayload({
@@ -2024,7 +2024,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             });
 
         // Encode the TransferWithPayload struct and simulate signing
-        // the message with the devnet guardian key.
+        // the message with the devnet phylax key.
         bytes memory signedMessage = getTransferWithPayloadMessage(
             transfer,
             ethereumChainId,
@@ -2209,7 +2209,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             })
         );
 
-        // Create a simulated version of the wormhole message that the
+        // Create a simulated version of the deltaswap message that the
         // relayer contract will emit.
         ITokenBridge.TransferWithPayload memory transfer =
             ITokenBridge.TransferWithPayload({
@@ -2224,7 +2224,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             });
 
         // Encode the TransferWithPayload struct and simulate signing
-        // the message with the devnet guardian key.
+        // the message with the devnet phylax key.
         bytes memory signedMessage = getTransferWithPayloadMessage(
             transfer,
             ethereumChainId,
@@ -2322,7 +2322,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             })
         );
 
-        // Create a simulated version of the wormhole message that the
+        // Create a simulated version of the deltaswap message that the
         // relayer contract will emit.
         ITokenBridge.TransferWithPayload memory transfer =
             ITokenBridge.TransferWithPayload({
@@ -2337,7 +2337,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             });
 
         // Encode the TransferWithPayload struct and simulate signing
-        // the message with the devnet guardian key.
+        // the message with the devnet phylax key.
         bytes memory signedMessage = getTransferWithPayloadMessage(
             transfer,
             ethereumChainId,
@@ -2449,7 +2449,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             })
         );
 
-        // Create a simulated version of the wormhole message that the
+        // Create a simulated version of the deltaswap message that the
         // relayer contract will emit.
         ITokenBridge.TransferWithPayload memory transfer =
             ITokenBridge.TransferWithPayload({
@@ -2464,7 +2464,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             });
 
         // Encode the TransferWithPayload struct and simulate signing
-        // the message with the devnet guardian key.
+        // the message with the devnet phylax key.
         bytes memory signedMessage = getTransferWithPayloadMessage(
             transfer,
             ethereumChainId,
@@ -2581,7 +2581,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             })
         );
 
-        // Create a simulated version of the wormhole message that the
+        // Create a simulated version of the deltaswap message that the
         // relayer contract will emit.
         ITokenBridge.TransferWithPayload memory transfer =
             ITokenBridge.TransferWithPayload({
@@ -2596,7 +2596,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             });
 
         // Encode the TransferWithPayload struct and simulate signing
-        // the message with the devnet guardian key.
+        // the message with the devnet phylax key.
         bytes memory signedMessage = getTransferWithPayloadMessage(
             transfer,
             ethereumChainId,
@@ -2684,7 +2684,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             })
         );
 
-        // Create a simulated version of the wormhole message that the
+        // Create a simulated version of the deltaswap message that the
         // relayer contract will emit.
         ITokenBridge.TransferWithPayload memory transfer =
             ITokenBridge.TransferWithPayload({
@@ -2699,7 +2699,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             });
 
         // Encode the TransferWithPayload struct and simulate signing
-        // the message with the devnet guardian key.
+        // the message with the devnet phylax key.
         bytes memory signedMessage = getTransferWithPayloadMessage(
             transfer,
             ethereumChainId,
@@ -2804,7 +2804,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             })
         );
 
-        // Create a simulated version of the wormhole message that the
+        // Create a simulated version of the deltaswap message that the
         // relayer contract will emit.
         ITokenBridge.TransferWithPayload memory transfer =
             ITokenBridge.TransferWithPayload({
@@ -2819,7 +2819,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             });
 
         // Encode the TransferWithPayload struct and simulate signing
-        // the message with the devnet guardian key.
+        // the message with the devnet phylax key.
         bytes memory signedMessage = getTransferWithPayloadMessage(
             transfer,
             ethereumChainId,
@@ -2931,7 +2931,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             })
         );
 
-        // Create a simulated version of the wormhole message that the
+        // Create a simulated version of the deltaswap message that the
         // relayer contract will emit.
         ITokenBridge.TransferWithPayload memory transfer =
             ITokenBridge.TransferWithPayload({
@@ -2946,7 +2946,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             });
 
         // Encode the TransferWithPayload struct and simulate signing
-        // the message with the devnet guardian key.
+        // the message with the devnet phylax key.
         bytes memory signedMessage = getTransferWithPayloadMessage(
             transfer,
             ethereumChainId,
@@ -3106,7 +3106,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             })
         );
 
-        // Create a simulated version of the wormhole message that the
+        // Create a simulated version of the deltaswap message that the
         // relayer contract will emit.
         ITokenBridge.TransferWithPayload memory transfer =
             ITokenBridge.TransferWithPayload({
@@ -3121,7 +3121,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             });
 
         // Encode the TransferWithPayload struct and simulate signing
-        // the message with the devnet guardian key.
+        // the message with the devnet phylax key.
         bytes memory signedMessage = getTransferWithPayloadMessage(
             transfer,
             ethereumChainId,
@@ -3255,7 +3255,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             })
         );
 
-        // Create a simulated version of the wormhole message that the
+        // Create a simulated version of the deltaswap message that the
         // relayer contract will emit.
         ITokenBridge.TransferWithPayload memory transfer =
             ITokenBridge.TransferWithPayload({
@@ -3270,7 +3270,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             });
 
         // Encode the TransferWithPayload struct and simulate signing
-        // the message with the devnet guardian key.
+        // the message with the devnet phylax key.
         bytes memory signedMessage = getTransferWithPayloadMessage(
             transfer,
             ethereumChainId,
@@ -3312,7 +3312,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             })
         );
 
-        // Create a simulated version of the wormhole message that the
+        // Create a simulated version of the deltaswap message that the
         // relayer contract will emit.
         ITokenBridge.TransferWithPayload memory transfer =
             ITokenBridge.TransferWithPayload({
@@ -3327,7 +3327,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             });
 
         // Encode the TransferWithPayload struct and simulate signing
-        // the message with the devnet guardian key.
+        // the message with the devnet phylax key.
         bytes memory signedMessage = getTransferWithPayloadMessage(
             transfer,
             ethereumChainId,
@@ -3372,7 +3372,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             })
         );
 
-        // Create a simulated version of the wormhole message that the
+        // Create a simulated version of the deltaswap message that the
         // relayer contract will emit.
         ITokenBridge.TransferWithPayload memory transfer =
             ITokenBridge.TransferWithPayload({
@@ -3387,7 +3387,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             });
 
         // Encode the TransferWithPayload struct and simulate signing
-        // the message with the devnet guardian key.
+        // the message with the devnet phylax key.
         bytes memory signedMessage = getTransferWithPayloadMessage(
             transfer,
             ethereumChainId,
@@ -3459,7 +3459,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             })
         );
 
-        // Create a simulated version of the wormhole message that the
+        // Create a simulated version of the deltaswap message that the
         // relayer contract will emit.
         ITokenBridge.TransferWithPayload memory transfer =
             ITokenBridge.TransferWithPayload({
@@ -3474,7 +3474,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             });
 
         // Encode the TransferWithPayload struct and simulate signing
-        // the message with the devnet guardian key.
+        // the message with the devnet phylax key.
         bytes memory signedMessage = getTransferWithPayloadMessage(
             transfer,
             ethereumChainId,
@@ -3560,7 +3560,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             })
         );
 
-        // Create a simulated version of the wormhole message that the
+        // Create a simulated version of the deltaswap message that the
         // relayer contract will emit.
         ITokenBridge.TransferWithPayload memory transfer =
             ITokenBridge.TransferWithPayload({
@@ -3575,7 +3575,7 @@ contract TokenBridgeRelayerTest is Helpers, ForgeHelpers, Test {
             });
 
         // Encode the TransferWithPayload struct and simulate signing
-        // the message with the devnet guardian key.
+        // the message with the devnet phylax key.
         bytes memory signedMessage = getTransferWithPayloadMessage(
             transfer,
             ethereumChainId,

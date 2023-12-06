@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import { RELEASE_CHAIN_ID, RELEASE_RPC, RELEASE_BRIDGE_ADDRESS, ZERO_ADDRESS } from "./consts";
-import { tryHexToNativeString, tryUint8ArrayToNative } from "@certusone/wormhole-sdk";
+import { tryHexToNativeString, tryUint8ArrayToNative } from "@deltaswapio/deltaswap-sdk";
 import {
   ITokenBridge,
   ITokenBridgeRelayer,
@@ -177,7 +177,7 @@ async function main() {
   } = JSON.parse(fs.readFileSync(args.config, "utf8")) as Config;
 
   if (!isOperatingChain(RELEASE_CHAIN_ID)) {
-    throw new Error(`Transaction signing unsupported for wormhole chain id ${RELEASE_CHAIN_ID}`);
+    throw new Error(`Transaction signing unsupported for deltaswap chain id ${RELEASE_CHAIN_ID}`);
   }
 
   // set up ethers wallet
@@ -200,7 +200,7 @@ async function main() {
   for (const [chainIdString, tokens] of Object.entries(tokenConfig)) {
     const chainIdToRegister = Number(chainIdString);
     if (!isChain(chainIdToRegister)) {
-      throw new Error(`Unknown wormhole chain id ${chainIdToRegister}`);
+      throw new Error(`Unknown deltaswap chain id ${chainIdToRegister}`);
     }
     console.log("\n");
     console.log(`ChainId ${chainIdToRegister}`);

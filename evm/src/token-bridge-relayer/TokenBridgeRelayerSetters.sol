@@ -20,8 +20,8 @@ abstract contract TokenBridgeRelayerSetters is TokenBridgeRelayerState {
         _state.feeRecipient = feeRecipient_;
     }
 
-    function setWormhole(address wormhole_) internal {
-        _state.wormhole = payable(wormhole_);
+    function setDeltaswap(address deltaswap_) internal {
+        _state.deltaswap = payable(deltaswap_);
     }
 
     function setTokenBridge(address tokenBridge_) internal {

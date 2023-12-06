@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache 2
 pragma solidity ^0.8.17;
 
-import {IWormhole} from "../interfaces/IWormhole.sol";
+import {IDeltaswap} from "../interfaces/IDeltaswap.sol";
 import {ITokenBridge} from "../interfaces/ITokenBridge.sol";
 import {IWETH} from "../interfaces/IWETH.sol";
 
@@ -26,8 +26,8 @@ abstract contract TokenBridgeRelayerGetters is TokenBridgeRelayerSetters {
         return _state.feeRecipient;
     }
 
-    function wormhole() public view returns (IWormhole) {
-        return IWormhole(_state.wormhole);
+    function deltaswap() public view returns (IDeltaswap) {
+        return IDeltaswap(_state.deltaswap);
     }
 
     function tokenBridge() public view returns (ITokenBridge) {

@@ -35,9 +35,9 @@ Before deploying the contracts, create an environment file in the `env/` directo
 
 ```
 export RPC=""
-export RELEASE_WORMHOLE_ADDRESS=
+export RELEASE_DELTASWAP_ADDRESS=
 export RELEASE_BRIDGE_ADDRESS=
-export RELEASE_WORMHOLE_CHAIN_ID=
+export RELEASE_DELTASWAP_CHAIN_ID=
 export RELEASE_WETH_ADDRESS=
 export RELEASE_OWNER_ASSISTANT=
 export RELEASE_FEE_RECIPIENT=
@@ -64,7 +64,7 @@ cp testnetDeploymentConfig.json.sample testnetDeploymentConfig.json
 cp mainnetDeploymentConfig.json.sample mainnetDeploymentConfig.json
 ```
 
-Replace the sample `deployedContracts` with your deployed contract addresses (32-byte format) keyed by Wormhole Chain ID.
+Replace the sample `deployedContracts` with your deployed contract addresses (32-byte format) keyed by Deltaswap Chain ID.
 
 ```
 # example
@@ -75,7 +75,7 @@ Replace the sample `deployedContracts` with your deployed contract addresses (32
 }
 ```
 
-Replace the sample `acceptedTokensList` with your list of accepted tokens. Each token should have a symbol, native contract address (32-byte format) and the initial swapRate, keyed by the Wormhole Chain ID for the token.
+Replace the sample `acceptedTokensList` with your list of accepted tokens. Each token should have a symbol, native contract address (32-byte format) and the initial swapRate, keyed by the Deltaswap Chain ID for the token.
 
 ```
 # example
@@ -98,7 +98,7 @@ Replace the sample `acceptedTokensList` with your list of accepted tokens. Each 
 }
 ```
 
-Replace the sample `maxNativeSwapAmount` with your list of maximum native swap amounts keyed by Wormhole Chain ID. This parameter can be configured on a per-token basis, but to reduce complexity each token will be set to the same value (per chain).
+Replace the sample `maxNativeSwapAmount` with your list of maximum native swap amounts keyed by Deltaswap Chain ID. This parameter can be configured on a per-token basis, but to reduce complexity each token will be set to the same value (per chain).
 
 ```
 # example
@@ -109,7 +109,7 @@ Replace the sample `maxNativeSwapAmount` with your list of maximum native swap a
   }
 ```
 
-Replace the sample `relayerFeesInUsd` with your list of relayer fees (in USD terms) keyed by Wormhole Chain ID.
+Replace the sample `relayerFeesInUsd` with your list of relayer fees (in USD terms) keyed by Deltaswap Chain ID.
 
 ```
 # example

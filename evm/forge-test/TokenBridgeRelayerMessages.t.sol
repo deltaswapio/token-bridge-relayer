@@ -5,11 +5,11 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 import {IWETH} from "../src/interfaces/IWETH.sol";
-import {IWormhole} from "../src/interfaces/IWormhole.sol";
+import {IDeltaswap} from "../src/interfaces/IDeltaswap.sol";
 import {ITokenBridge} from "../src/interfaces/ITokenBridge.sol";
 import {ITokenBridgeRelayer} from "../src/interfaces/ITokenBridgeRelayer.sol";
 
-import {ForgeHelpers} from "wormhole-solidity/ForgeHelpers.sol";
+import {ForgeHelpers} from "deltaswap-solidity/ForgeHelpers.sol";
 import {Helpers} from "./Helpers.sol";
 
 import {TokenBridgeRelayer} from "../src/token-bridge-relayer/TokenBridgeRelayer.sol";
@@ -28,9 +28,9 @@ contract TestTokenBridgeRelayerMessagesTest is Helpers, ForgeHelpers, Test {
     ITokenBridgeRelayer avaxRelayer;
 
     function setupTokenBridgeRelayer() internal {
-        // cache avax chain ID and wormhole address
+        // cache avax chain ID and deltaswap address
         uint16 avaxChainId = 6;
-        address wormholeAddress = vm.envAddress("TESTING_AVAX_WORMHOLE_ADDRESS");
+        address deltaswapAddress = vm.envAddress("TESTING_AVAX_DELTASWAP_ADDRESS");
         address avaxFeeRecipient = vm.envAddress("TESTING_AVAX_FEE_RECIPIENT");
         address ownerAssistant = vm.envAddress("TESTING_AVAX_OWNER_ASSISTANT");
 
@@ -48,7 +48,7 @@ contract TestTokenBridgeRelayerMessagesTest is Helpers, ForgeHelpers, Test {
         assertEq(avaxRelayer.chainId(), avaxChainId);
         assertEq(avaxRelayer.feeRecipient(), avaxFeeRecipient);
         assertEq(avaxRelayer.ownerAssistant(), ownerAssistant);
-        assertEq(address(avaxRelayer.wormhole()), wormholeAddress);
+        assertEq(address(avaxRelayer.deltaswap()), deltaswapAddress);
         assertEq(
             address(avaxRelayer.tokenBridge()),
             vm.envAddress("TESTING_AVAX_BRIDGE_ADDRESS")

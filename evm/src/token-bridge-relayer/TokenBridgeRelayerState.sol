@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache 2
 pragma solidity ^0.8.17;
 
-import {IWormhole} from "../interfaces/IWormhole.sol";
+import {IDeltaswap} from "../interfaces/IDeltaswap.sol";
 
 abstract contract TokenBridgeRelayerStorage {
     struct State {
-        // Wormhole chain ID of this contract
+        // Deltaswap chain ID of this contract
         uint16 chainId;
 
         // boolean to determine if weth is unwrappable
@@ -29,10 +29,10 @@ abstract contract TokenBridgeRelayerStorage {
         // intermediate state when transfering contract ownership
         address pendingOwner;
 
-        // address of the Wormhole contract on this chain
-        address wormhole;
+        // address of the Deltaswap contract on this chain
+        address deltaswap;
 
-        // address of the Wormhole TokenBridge contract on this chain
+        // address of the Deltaswap TokenBridge contract on this chain
         address tokenBridge;
 
         // precision of the nativeSwapRates, this value should NEVER be set to zero
@@ -41,7 +41,7 @@ abstract contract TokenBridgeRelayerStorage {
         // precision of the relayerFee, this value should NEVER be set to zero
         uint256 relayerFeePrecision;
 
-        // Wormhole chain ID to known relayer contract address mapping
+        // Deltaswap chain ID to known relayer contract address mapping
         mapping(uint16 => bytes32) registeredContracts;
 
         // token swap rate in USD terms

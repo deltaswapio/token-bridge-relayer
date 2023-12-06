@@ -6,7 +6,7 @@ import {
   RELEASE_BRIDGE_ADDRESS,
   ZERO_ADDRESS,
 } from "./consts";
-import {ChainId, tryUint8ArrayToNative} from "@certusone/wormhole-sdk";
+import {ChainId, tryUint8ArrayToNative} from "@deltaswapio/deltaswap-sdk";
 import {ITokenBridge__factory} from "../src/ethers-contracts";
 import * as fs from "fs";
 

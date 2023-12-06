@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import { RELEASE_CHAIN_ID, RELEASE_RPC } from "./consts";
-import { tryHexToNativeString } from "@certusone/wormhole-sdk";
+import { tryHexToNativeString } from "@deltaswapio/deltaswap-sdk";
 import { ITokenBridgeRelayer__factory, ITokenBridgeRelayer } from "../src/ethers-contracts";
 import fs from "fs";
 import { Config, ConfigArguments, isOperatingChain, configArgsParser } from "./config";
@@ -64,7 +64,7 @@ async function main() {
   ) as Config;
 
   if (!isOperatingChain(RELEASE_CHAIN_ID)) {
-    throw new Error(`Transaction signing unsupported for wormhole chain id ${RELEASE_CHAIN_ID}`);
+    throw new Error(`Transaction signing unsupported for deltaswap chain id ${RELEASE_CHAIN_ID}`);
   }
   if (!ethers.utils.isAddress(args.newOwnerAssistant)) {
     throw new Error(`Invalid EVM address for owner assitant: ${args.newOwnerAssistant}`);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache 2
 pragma solidity ^0.8.17;
 
-import {IWormhole} from "../interfaces/IWormhole.sol";
+import {IDeltaswap} from "../interfaces/IDeltaswap.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -17,7 +17,7 @@ abstract contract TokenBridgeRelayerGovernance is TokenBridgeRelayerGetters {
     /**
      * @notice Starts the ownership transfer process of the contracts. It saves
      * an address in the pending owner state variable.
-     * @param chainId_ Wormhole chain ID.
+     * @param chainId_ Deltaswap chain ID.
      * @param newOwner Address of the pending owner.
      */
     function submitOwnershipTransferRequest(
@@ -64,7 +64,7 @@ abstract contract TokenBridgeRelayerGovernance is TokenBridgeRelayerGetters {
     /**
      * @notice Updates the `ownerAssistant` state variable. This method can
      * only be executed by the owner.
-     * @param chainId_ Wormhole chain ID.
+     * @param chainId_ Deltaswap chain ID.
      * @param newAssistant Address of the new `ownerAssistant`.
      */
     function updateOwnerAssistant(
@@ -83,7 +83,7 @@ abstract contract TokenBridgeRelayerGovernance is TokenBridgeRelayerGetters {
     /**
      * @notice Updates the `feeRecipient` state variable. This method can
      * only be executed by the owner.
-     * @param chainId_ Wormhole chain ID.
+     * @param chainId_ Deltaswap chain ID.
      * @param newFeeRecipient Address of the new `feeRecipient`.
      */
     function updateFeeRecipient(
@@ -110,7 +110,7 @@ abstract contract TokenBridgeRelayerGovernance is TokenBridgeRelayerGetters {
      * support a WETH contract. Some chains (e.g. Celo, Karura, Acala)
      * do not support a WETH contract, and the address is set as a placeholder
      * for the native asset address for swapRate lookups.
-     * @param chainId_ Wormhole chain ID.
+     * @param chainId_ Deltaswap chain ID.
      * @param unwrapWeth_ Boolean that determines if WETH is unwrapped
      * when transferred back to its native blockchain.
      */
@@ -123,7 +123,7 @@ abstract contract TokenBridgeRelayerGovernance is TokenBridgeRelayerGetters {
 
     /**
      * @notice Registers foreign Token Bridge Relayer contracts.
-     * @param chainId_ Wormhole chain ID of the foreign contract.
+     * @param chainId_ Deltaswap chain ID of the foreign contract.
      * @param contractAddress Address of the foreign contract in bytes32 format
      * (zero-left-padded address).
      */
@@ -147,7 +147,7 @@ abstract contract TokenBridgeRelayerGovernance is TokenBridgeRelayerGetters {
 
     /**
      * @notice Register tokens accepted by this contract.
-     * @param chainId_ Wormhole chain ID.
+     * @param chainId_ Deltaswap chain ID.
      * @param token Address of the token.
      */
     function registerToken(
@@ -163,7 +163,7 @@ abstract contract TokenBridgeRelayerGovernance is TokenBridgeRelayerGetters {
      * @notice Deregister tokens accepted by this contract.
      * @dev The `removeAcceptedToken` function will revert
      * if the token is not registered.
-     * @param chainId_ Wormhole chain ID.
+     * @param chainId_ Deltaswap chain ID.
      * @param token Address of the token.
      */
     function deregisterToken(
@@ -177,7 +177,7 @@ abstract contract TokenBridgeRelayerGovernance is TokenBridgeRelayerGetters {
 
     /**
      * @notice Updates the fee for relaying transfers to foreign contracts.
-     * @param chainId_ Wormhole chain ID.
+     * @param chainId_ Deltaswap chain ID.
      * @param amount Amount of USD to pay the relayer upon redemption.
      * @dev The relayerFee is scaled by the relayerFeePrecision. For example,
      * if the relayerFee is $15 and the relayerFeePrecision is 1000000, the
@@ -198,7 +198,7 @@ abstract contract TokenBridgeRelayerGovernance is TokenBridgeRelayerGetters {
 
     /**
      * @notice Updates the precision of the relayer fee.
-     * @param chainId_ Wormhole chain ID.
+     * @param chainId_ Deltaswap chain ID.
      * @param relayerFeePrecision_ Precision of relayer fee.
      */
     function updateRelayerFeePrecision(
@@ -212,7 +212,7 @@ abstract contract TokenBridgeRelayerGovernance is TokenBridgeRelayerGetters {
 
     /**
      * @notice Updates the swap rates for a batch of tokens.
-     * @param chainId_ Wormhole chain ID.
+     * @param chainId_ Deltaswap chain ID.
      * @param swapRateUpdate Array of structs with token -> swap rate pairs.
      * @dev The swapRate is the conversion rate using asset prices denominated in
      * USD multiplied by the swapRatePrecision. For example, if the conversion
@@ -251,7 +251,7 @@ abstract contract TokenBridgeRelayerGovernance is TokenBridgeRelayerGetters {
 
     /**
      * @notice Updates the precision of the swap rate.
-     * @param chainId_ Wormhole chain ID.
+     * @param chainId_ Deltaswap chain ID.
      * @param swapRatePrecision_ Precision of swap rate.
      */
     function updateSwapRatePrecision(
@@ -266,7 +266,7 @@ abstract contract TokenBridgeRelayerGovernance is TokenBridgeRelayerGetters {
     /**
      * @notice Updates the max amount of native assets the contract will pay
      * to the target recipient.
-     * @param chainId_ Wormhole chain ID.
+     * @param chainId_ Deltaswap chain ID.
      * @param token Address of the token to update the max native swap amount for.
      * @param maxAmount Max amount of native assets.
      */
@@ -284,7 +284,7 @@ abstract contract TokenBridgeRelayerGovernance is TokenBridgeRelayerGetters {
      * @notice Sets the pause state of the relayer. If paused, token transfer
      * requests are blocked. In flight transfers, i.e. those that have a VAA
      * emitted, can still be processed if paused.
-     * @param chainId_ Wormhole chain ID
+     * @param chainId_ Deltaswap chain ID
      * @param paused If true, requests for token transfers will be blocked
      * and no VAAs will be generated.
      */

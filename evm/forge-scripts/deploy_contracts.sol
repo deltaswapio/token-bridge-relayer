@@ -5,21 +5,21 @@ pragma solidity ^0.8.17;
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
 
-import {IWormhole} from "../src/interfaces/IWormhole.sol";
+import {IDeltaswap} from "../src/interfaces/IDeltaswap.sol";
 import {ITokenBridge} from "../src/interfaces/ITokenBridge.sol";
 import {ITokenBridgeRelayer} from "../src/interfaces/ITokenBridgeRelayer.sol";
 
 import {TokenBridgeRelayer} from "../src/token-bridge-relayer/TokenBridgeRelayer.sol";
 
 contract ContractScript is Script {
-    // Wormhole Interface
-    IWormhole wormhole;
+    // Deltaswap Interface
+    IDeltaswap deltaswap;
 
     // TokenBridgeRelayer instance (post deployment)
     ITokenBridgeRelayer relayer;
 
     function setUp() public {
-        wormhole = IWormhole(vm.envAddress("RELEASE_WORMHOLE_ADDRESS"));
+        deltaswap = IDeltaswap(vm.envAddress("RELEASE_DELTASWAP_ADDRESS"));
     }
 
     function deployTokenBridgeRelayer() public {
@@ -43,10 +43,10 @@ contract ContractScript is Script {
         relayer = ITokenBridgeRelayer(address(deployedRelayer));
 
         // verify getters
-        require(relayer.chainId() == wormhole.chainId());
+        require(relayer.chainId() == deltaswap.chainId());
         require(relayer.feeRecipient() == feeRecipient);
         require(relayer.ownerAssistant() == relayer.ownerAssistant());
-        require(address(relayer.wormhole()) == address(wormhole));
+        require(address(relayer.deltaswap()) == address(deltaswap));
         require(address(relayer.tokenBridge()) == tokenBridgeAddress);
         require(address(relayer.WETH()) == wethAddress);
         require(relayer.unwrapWeth() == shouldUnwrapWeth);

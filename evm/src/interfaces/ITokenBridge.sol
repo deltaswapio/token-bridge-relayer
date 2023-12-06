@@ -3,7 +3,7 @@
 pragma solidity ^0.8.17;
 
 import "./IWETH.sol";
-import "./IWormhole.sol";
+import "./IDeltaswap.sol";
 
 interface ITokenBridge {
     struct Transfer {
@@ -107,7 +107,7 @@ interface ITokenBridge {
 
     function isTransferCompleted(bytes32 hash) external view returns (bool);
 
-    function wormhole() external view returns (IWormhole);
+    function deltaswap() external view returns (IDeltaswap);
 
     function chainId() external view returns (uint16);
 

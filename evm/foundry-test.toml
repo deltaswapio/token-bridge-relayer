@@ -15,8 +15,8 @@ remappings = [
     "@solidity-parser/=node_modules/@solidity-parser/",
     "ds-test/=lib/forge-std/lib/ds-test/src/",
     "forge-std/=lib/forge-std/src/",
-    "wormhole/=lib/wormhole/ethereum/contracts",
-    "wormhole-forge-sdk/=modules/src",
+    "deltaswap/=lib/deltaswap/ethereum/contracts",
+    "deltaswap-forge-sdk/=modules/src",
 ]
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

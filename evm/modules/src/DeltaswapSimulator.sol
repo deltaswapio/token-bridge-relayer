@@ -1,83 +1,83 @@
 // SPDX-License-Identifier: Apache 2
 pragma solidity ^0.8.17;
 
-import {IWormhole} from "../../src/interfaces/IWormhole.sol";
+import {IDeltaswap} from "../../src/interfaces/IDeltaswap.sol";
 import "../../src/libraries/BytesLib.sol";
 
 import "forge-std/Vm.sol";
 import "forge-std/console.sol";
 
 /**
- * @title A Wormhole Guardian Simulator
- * @notice This contract simulates signing Wormhole messages emitted in a forge test.
- * It overrides the Wormhole guardian set to allow for signing messages with a single
- * private key on any EVM where Wormhole core contracts are deployed.
+ * @title A Deltaswap Phylax Simulator
+ * @notice This contract simulates signing Deltaswap messages emitted in a forge test.
+ * It overrides the Deltaswap phylax set to allow for signing messages with a single
+ * private key on any EVM where Deltaswap core contracts are deployed.
  * @dev This contract is meant to be used when testing against a mainnet fork.
  */
-contract WormholeSimulator {
+contract DeltaswapSimulator {
     using BytesLib for bytes;
 
     // Taken from forge-std/Script.sol
     address private constant VM_ADDRESS = address(bytes20(uint160(uint256(keccak256("hevm cheat code")))));
     Vm public constant vm = Vm(VM_ADDRESS);
 
-    // Allow access to Wormhole
-    IWormhole public wormhole;
+    // Allow access to Deltaswap
+    IDeltaswap public deltaswap;
 
-    // Save the guardian PK to sign messages with
-    uint256 private devnetGuardianPK;
+    // Save the phylax PK to sign messages with
+    uint256 private devnetPhylaxPK;
 
     /**
-     * @param wormhole_ address of the Wormhole core contract for the mainnet chain being forked
-     * @param devnetGuardian private key of the devnet Guardian
+     * @param deltaswap_ address of the Deltaswap core contract for the mainnet chain being forked
+     * @param devnetPhylax private key of the devnet Phylax
      */
-    constructor(address wormhole_, uint256 devnetGuardian) {
-        wormhole = IWormhole(wormhole_);
-        devnetGuardianPK = devnetGuardian;
-        overrideToDevnetGuardian(vm.addr(devnetGuardian));
+    constructor(address deltaswap_, uint256 devnetPhylax) {
+        deltaswap = IDeltaswap(deltaswap_);
+        devnetPhylaxPK = devnetPhylax;
+        overrideToDevnetPhylax(vm.addr(devnetPhylax));
     }
 
-    function overrideToDevnetGuardian(address devnetGuardian) internal {
+    function overrideToDevnetPhylax(address devnetPhylax) internal {
         {
             bytes32 data = vm.load(address(this), bytes32(uint256(2)));
             require(data == bytes32(0), "incorrect slot");
 
-            // Get slot for Guardian Set at the current index
-            uint32 guardianSetIndex = wormhole.getCurrentGuardianSetIndex();
-            bytes32 guardianSetSlot = keccak256(abi.encode(guardianSetIndex, 2));
+            // Get slot for Phylax Set at the current index
+            uint32 phylaxSetIndex = deltaswap.getCurrentPhylaxSetIndex();
+            bytes32 phylaxSetSlot = keccak256(abi.encode(phylaxSetIndex, 2));
 
-            // Overwrite all but first guardian set to zero address. This isn't
+            // Overwrite all but first phylax set to zero address. This isn't
             // necessary, but just in case we inadvertently access these slots
             // for any reason.
-            uint256 numGuardians = uint256(vm.load(address(wormhole), guardianSetSlot));
-            for (uint256 i = 1; i < numGuardians;) {
+            uint256 numPhylaxs = uint256(vm.load(address(deltaswap), phylaxSetSlot));
+            for (uint256 i = 1; i < numPhylaxs;) {
                 vm.store(
-                    address(wormhole), bytes32(uint256(keccak256(abi.encodePacked(guardianSetSlot))) + i), bytes32(0)
+                    address(deltaswap), bytes32(uint256(keccak256(abi.encodePacked(phylaxSetSlot))) + i), bytes32(0)
                 );
                 unchecked {
                     i += 1;
                 }
             }
 
-            // Now overwrite the first guardian key with the devnet key specified
+            // Now overwrite the first phylax key with the devnet key specified
             // in the function argument.
             vm.store(
-                address(wormhole),
-                bytes32(uint256(keccak256(abi.encodePacked(guardianSetSlot))) + 0), // just explicit w/ index 0
-                bytes32(uint256(uint160(devnetGuardian)))
+                address(deltaswap),
+                bytes32(uint256(keccak256(abi.encodePacked(phylaxSetSlot))) + 0), // just explicit w/ index 0
+                bytes32(uint256(uint160(devnetPhylax)))
             );
 
-            // Change the length to 1 guardian
+            // Change the length to 1 phylax
             vm.store(
-                address(wormhole),
-                guardianSetSlot,
+                address(deltaswap),
+                phylaxSetSlot,
                 bytes32(uint256(1)) // length == 1
             );
 
-            // Confirm guardian set override
-            address[] memory guardians = wormhole.getGuardianSet(guardianSetIndex).keys;
-            require(guardians.length == 1, "guardians.length != 1");
-            require(guardians[0] == devnetGuardian, "incorrect guardian set override");
+            // Confirm phylax set override
+            address[] memory phylaxs = deltaswap.getPhylaxSet(phylaxSetIndex).keys;
+            require(phylaxs.length == 1, "phylaxs.length != 1");
+            require(phylaxs[0] == devnetPhylax, "incorrect phylax set override");
         }
     }
 
@@ -85,7 +85,7 @@ contract WormholeSimulator {
         return keccak256(abi.encodePacked(keccak256(body)));
     }
 
-    function parseVMFromLogs(Vm.Log memory log) internal pure returns (IWormhole.VM memory vm_) {
+    function parseVMFromLogs(Vm.Log memory log) internal pure returns (IDeltaswap.VM memory vm_) {
         uint256 index = 0;
 
         // emitterAddress
@@ -116,15 +116,15 @@ contract WormholeSimulator {
         // trailing bytes (due to 32 byte slot overlap)
         index += log.data.length - index;
 
-        require(index == log.data.length, "failed to parse wormhole message");
+        require(index == log.data.length, "failed to parse deltaswap message");
     }
 
     /**
-     * @notice Finds published Wormhole events in forge logs
+     * @notice Finds published Deltaswap events in forge logs
      * @param logs The forge Vm.log captured when recording events during test execution
-     * @param numMessages The expected number of Wormhole events in the forge logs
+     * @param numMessages The expected number of Deltaswap events in the forge logs
      */
-    function fetchWormholeMessageFromLog(
+    function fetchDeltaswapMessageFromLog(
         Vm.Log[] memory logs,
         uint8 numMessages
     ) public pure returns (Vm.Log[] memory) {
@@ -147,11 +147,11 @@ contract WormholeSimulator {
     }
 
     /**
-     * @notice Encodes Wormhole message body into bytes
-     * @param vm_ Wormhole VM struct
-     * @return encodedObservation Wormhole message body encoded into bytes
+     * @notice Encodes Deltaswap message body into bytes
+     * @param vm_ Deltaswap VM struct
+     * @return encodedObservation Deltaswap message body encoded into bytes
      */
-    function encodeObservation(IWormhole.VM memory vm_) public pure returns (bytes memory encodedObservation) {
+    function encodeObservation(IDeltaswap.VM memory vm_) public pure returns (bytes memory encodedObservation) {
         encodedObservation = abi.encodePacked(
             vm_.timestamp,
             vm_.nonce,
@@ -164,9 +164,9 @@ contract WormholeSimulator {
     }
 
     /**
-     * @notice Formats and signs a simulated Wormhole message using the emitted log from calling `publishMessage`
+     * @notice Formats and signs a simulated Deltaswap message using the emitted log from calling `publishMessage`
      * @param log The forge Vm.log captured when recording events during test execution
-     * @return signedMessage Formatted and signed Wormhole message
+     * @return signedMessage Formatted and signed Deltaswap message
      */
     function fetchSignedMessageFromLogs(
         Vm.Log memory log,
@@ -174,9 +174,9 @@ contract WormholeSimulator {
         address emitterAddress
     ) public view returns (bytes memory signedMessage) {
         // Create message instance
-        IWormhole.VM memory vm_;
+        IDeltaswap.VM memory vm_;
 
-        // Parse wormhole message from ethereum logs
+        // Parse deltaswap message from ethereum logs
         vm_ = parseVMFromLogs(log);
 
         // Set empty body values before computing the hash
@@ -189,27 +189,27 @@ contract WormholeSimulator {
     }
 
     /**
-     * @notice Signs and preformatted simulated Wormhole message
-     * @param vm_ The preformatted Wormhole message
-     * @return signedMessage Formatted and signed Wormhole message
+     * @notice Signs and preformatted simulated Deltaswap message
+     * @param vm_ The preformatted Deltaswap message
+     * @return signedMessage Formatted and signed Deltaswap message
      */
     function encodeAndSignMessage(
-        IWormhole.VM memory vm_
+        IDeltaswap.VM memory vm_
     ) public view returns (bytes memory signedMessage) {
         // Compute the hash of the body
         bytes memory body = encodeObservation(vm_);
         vm_.hash = doubleKeccak256(body);
 
-        // Sign the hash with the devnet guardian private key
-        IWormhole.Signature[] memory sigs = new IWormhole.Signature[](1);
-        (sigs[0].v, sigs[0].r, sigs[0].s) = vm.sign(devnetGuardianPK, vm_.hash);
-        sigs[0].guardianIndex = 0;
+        // Sign the hash with the devnet phylax private key
+        IDeltaswap.Signature[] memory sigs = new IDeltaswap.Signature[](1);
+        (sigs[0].v, sigs[0].r, sigs[0].s) = vm.sign(devnetPhylaxPK, vm_.hash);
+        sigs[0].phylaxIndex = 0;
 
         signedMessage = abi.encodePacked(
             vm_.version,
-            wormhole.getCurrentGuardianSetIndex(),
+            deltaswap.getCurrentPhylaxSetIndex(),
             uint8(sigs.length),
-            sigs[0].guardianIndex,
+            sigs[0].phylaxIndex,
             sigs[0].r,
             sigs[0].s,
             sigs[0].v - 27,

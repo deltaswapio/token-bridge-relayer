@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache 2
 pragma solidity ^0.8.17;
 
-import {IWormhole} from "../interfaces/IWormhole.sol";
+import {IDeltaswap} from "../interfaces/IDeltaswap.sol";
 import {ITokenBridge} from "../interfaces/ITokenBridge.sol";
 
 import "../libraries/BytesLib.sol";
@@ -13,8 +13,8 @@ import "./TokenBridgeRelayerGovernance.sol";
 import "./TokenBridgeRelayerMessages.sol";
 
 /**
- * @title Wormhole Token Bridge Relayer
- * @notice This contract composes on Wormhole's Token Bridge contracts to faciliate
+ * @title Deltaswap Token Bridge Relayer
+ * @notice This contract composes on Deltaswap's Token Bridge contracts to faciliate
  * one-click transfers of Token Bridge supported assets cross chain.
  */
 contract TokenBridgeRelayer is TokenBridgeRelayerGovernance, TokenBridgeRelayerMessages, ReentrancyGuard {
@@ -43,10 +43,10 @@ contract TokenBridgeRelayer is TokenBridgeRelayerGovernance, TokenBridgeRelayerM
         setOwnerAssistant(ownerAssistant_);
         setUnwrapWethFlag(unwrapWeth_);
 
-        // fetch wormhole info from token bridge
+        // fetch deltaswap info from token bridge
         ITokenBridge bridge = ITokenBridge(tokenBridge_);
         setChainId(bridge.chainId());
-        setWormhole(address(bridge.wormhole()));
+        setDeltaswap(address(bridge.deltaswap()));
 
         // set the initial swapRate/relayer precisions to 1e8
         setSwapRatePrecision(1e8);
@@ -54,10 +54,10 @@ contract TokenBridgeRelayer is TokenBridgeRelayerGovernance, TokenBridgeRelayerM
     }
 
     /**
-     * @notice Emitted when a transfer is completed by the Wormhole token bridge
-     * @param emitterChainId Wormhole chain ID of emitter contract on the source chain
+     * @notice Emitted when a transfer is completed by the Deltaswap token bridge
+     * @param emitterChainId Deltaswap chain ID of emitter contract on the source chain
      * @param emitterAddress Address (bytes32 zero-left-padded) of emitter on the source chain
-     * @param sequence Sequence of the Wormhole message
+     * @param sequence Sequence of the Deltaswap message
      */
     event TransferRedeemed(
         uint16 indexed emitterChainId,
@@ -82,7 +82,7 @@ contract TokenBridgeRelayer is TokenBridgeRelayerGovernance, TokenBridgeRelayerM
     );
 
     /**
-     * @notice Calls Wormhole's Token Bridge contract to emit a contract-controlled
+     * @notice Calls Deltaswap's Token Bridge contract to emit a contract-controlled
      * transfer. The transfer message includes an arbitrary payload with instructions
      * for how to handle relayer payments on the target contract and the quantity of
      * tokens to convert into native assets for the user.
@@ -90,11 +90,11 @@ contract TokenBridgeRelayer is TokenBridgeRelayerGovernance, TokenBridgeRelayerM
      * @param amount Quantity of tokens to be transferred.
      * @param toNativeTokenAmount Amount of tokens to swap into native assets on
      * the target chain.
-     * @param targetChain Wormhole chain ID of the target blockchain.
+     * @param targetChain Deltaswap chain ID of the target blockchain.
      * @param targetRecipient User's wallet address on the target blockchain in bytes32 format
      * (zero-left-padded).
-     * @param batchId ID for Wormhole message batching
-     * @return messageSequence Wormhole sequence for emitted TransferTokensWithRelay message.
+     * @param batchId ID for Deltaswap message batching
+     * @return messageSequence Deltaswap sequence for emitted TransferTokensWithRelay message.
      */
     function transferTokensWithRelay(
         address token,
@@ -104,10 +104,10 @@ contract TokenBridgeRelayer is TokenBridgeRelayerGovernance, TokenBridgeRelayerM
         bytes32 targetRecipient,
         uint32 batchId
     ) public payable nonReentrant notPaused returns (uint64 messageSequence) {
-        // Cache wormhole fee and confirm that the user has passed enough
-        // value to cover the wormhole protocol fee.
-        uint256 wormholeFee = wormhole().messageFee();
-        require(msg.value == wormholeFee, "insufficient value");
+        // Cache deltaswap fee and confirm that the user has passed enough
+        // value to cover the deltaswap protocol fee.
+        uint256 deltaswapFee = deltaswap().messageFee();
+        require(msg.value == deltaswapFee, "insufficient value");
 
         // Cache token decimals, and remove dust from the amount argument. This
         // ensures that the dust is never transferred to this contract.
@@ -132,22 +132,22 @@ contract TokenBridgeRelayer is TokenBridgeRelayerGovernance, TokenBridgeRelayerM
                 targetRecipient: targetRecipient
             }),
             batchId,
-            wormholeFee
+            deltaswapFee
         );
     }
 
     /**
-     * @notice Wraps Ether and calls Wormhole's Token Bridge contract to emit
+     * @notice Wraps Ether and calls Deltaswap's Token Bridge contract to emit
      * a contract-controlled transfer. The transfer message includes an arbitrary
      * payload with instructions for how to handle relayer payments on the target
      * contract and the quantity of tokens to convert into native assets for the user.
      * @param toNativeTokenAmount Amount of tokens to swap into native assets on
      * the target chain.
-     * @param targetChain Wormhole chain ID of the target blockchain.
+     * @param targetChain Deltaswap chain ID of the target blockchain.
      * @param targetRecipient User's wallet address on the target blockchain in bytes32 format
      * (zero-left-padded).
-     * @param batchId ID for Wormhole message batching
-     * @return messageSequence Wormhole sequence for emitted TransferTokensWithRelay message.
+     * @param batchId ID for Deltaswap message batching
+     * @return messageSequence Deltaswap sequence for emitted TransferTokensWithRelay message.
      */
     function wrapAndTransferEthWithRelay(
         uint256 toNativeTokenAmount,
@@ -157,13 +157,13 @@ contract TokenBridgeRelayer is TokenBridgeRelayerGovernance, TokenBridgeRelayerM
     ) public payable notPaused returns (uint64 messageSequence) {
         require(unwrapWeth(), "WETH functionality not supported");
 
-        // Cache wormhole fee and confirm that the user has passed enough
-        // value to cover the wormhole protocol fee.
-        uint256 wormholeFee = wormhole().messageFee();
-        require(msg.value > wormholeFee, "insufficient value");
+        // Cache deltaswap fee and confirm that the user has passed enough
+        // value to cover the deltaswap protocol fee.
+        uint256 deltaswapFee = deltaswap().messageFee();
+        require(msg.value > deltaswapFee, "insufficient value");
 
-        // remove the wormhole protocol fee from the amount
-        uint256 amount = msg.value - wormholeFee;
+        // remove the deltaswap protocol fee from the amount
+        uint256 amount = msg.value - deltaswapFee;
 
         // refund dust
         uint256 dust = amount - denormalizeAmount(normalizeAmount(amount, 18), 18);
@@ -191,14 +191,14 @@ contract TokenBridgeRelayer is TokenBridgeRelayerGovernance, TokenBridgeRelayerM
                 targetRecipient: targetRecipient
             }),
             batchId,
-            wormholeFee
+            deltaswapFee
         );
     }
 
     function _transferTokensWithRelay(
         InternalTransferParams memory params,
         uint32 batchId,
-        uint256 wormholeFee
+        uint256 deltaswapFee
     ) internal returns (uint64 messageSequence) {
         // sanity check function arguments
         require(isAcceptedToken(params.token), "token not accepted");
@@ -278,11 +278,11 @@ contract TokenBridgeRelayer is TokenBridgeRelayerGovernance, TokenBridgeRelayerM
 
         /**
          * Call `transferTokensWithPayload` method on the token bridge and pay
-         * the Wormhole network fee. The token bridge will emit a Wormhole
+         * the Deltaswap network fee. The token bridge will emit a Deltaswap
          * message with an encoded `TransferWithPayload` struct (see the
          * ITokenBridge.sol interface file in this repo).
          */
-        messageSequence = bridge.transferTokensWithPayload{value: wormholeFee}(
+        messageSequence = bridge.transferTokensWithPayload{value: deltaswapFee}(
             params.token,
             params.amount,
             params.targetChain,
@@ -293,7 +293,7 @@ contract TokenBridgeRelayer is TokenBridgeRelayerGovernance, TokenBridgeRelayerM
     }
 
     /**
-     * @notice Calls Wormhole's Token Bridge contract to complete token transfers. Takes
+     * @notice Calls Deltaswap's Token Bridge contract to complete token transfers. Takes
      * custody of the wrapped (or released) tokens and sends the tokens to the target recipient.
      * It pays the fee recipient in the minted token denomination. If requested by the user,
      * it will perform a swap with the off-chain relayer to provide the user with native assets.
@@ -305,7 +305,7 @@ contract TokenBridgeRelayer is TokenBridgeRelayerGovernance, TokenBridgeRelayerM
      * - the emitter of the transfer message is not registered with this contract
      * - the relayer fails to provide enough native assets to faciliate a native swap
      * - the recipient attempts to swap native assets when performing a self redemption
-     * @param encodedTransferMessage Attested `TransferWithPayload` wormhole message.
+     * @param encodedTransferMessage Attested `TransferWithPayload` deltaswap message.
      */
     function completeTransferWithRelay(bytes calldata encodedTransferMessage) public payable {
         // complete the transfer by calling the token bridge
@@ -450,14 +450,14 @@ contract TokenBridgeRelayer is TokenBridgeRelayerGovernance, TokenBridgeRelayerM
         bytes memory encodedTransferMessage
     ) internal returns (bytes memory, uint256, address) {
         /**
-         * parse the encoded Wormhole message
+         * parse the encoded Deltaswap message
          *
-         * SECURITY: This message not been verified by the Wormhole core layer yet.
+         * SECURITY: This message not been verified by the Deltaswap core layer yet.
          * The encoded payload can only be trusted once the message has been verified
-         * by the Wormhole core contract. In this case, the message will be verified
+         * by the Deltaswap core contract. In this case, the message will be verified
          * by a call to the token bridge contract in subsequent actions.
          */
-        IWormhole.VM memory parsedMessage = wormhole().parseVM(
+        IDeltaswap.VM memory parsedMessage = deltaswap().parseVM(
             encodedTransferMessage
         );
 
@@ -492,7 +492,7 @@ contract TokenBridgeRelayer is TokenBridgeRelayerGovernance, TokenBridgeRelayerM
         // compute and save the balance difference after completing the transfer
         uint256 amountReceived = getBalance(localTokenAddress) - balanceBefore;
 
-        // parse the wormhole message payload into the `TransferWithPayload` struct
+        // parse the deltaswap message payload into the `TransferWithPayload` struct
         ITokenBridge.TransferWithPayload memory transfer =
             bridge.parseTransferWithPayload(transferPayload);
 
@@ -607,7 +607,7 @@ contract TokenBridgeRelayer is TokenBridgeRelayerGovernance, TokenBridgeRelayerM
         // Fetch the wrapped address from the token bridge if the token
         // is not from this chain.
         if (tokenChain != chainId()) {
-            // identify wormhole token bridge wrapper
+            // identify deltaswap token bridge wrapper
             localAddress = tokenBridge().wrappedAsset(tokenChain, sourceAddress);
             require(localAddress != address(0), "token not attested");
         } else {
@@ -674,7 +674,7 @@ contract TokenBridgeRelayer is TokenBridgeRelayerGovernance, TokenBridgeRelayerM
     /**
      * @notice Converts the USD denominated relayer fee into the specified token
      * denomination.
-     * @param targetChainId Wormhole chain ID of the target blockchain.
+     * @param targetChainId Deltaswap chain ID of the target blockchain.
      * @param token Address of token being transferred.
      * @param decimals Token decimals of token being transferred.
      * @return feeInTokenDenomination Relayer fee denominated in tokens.

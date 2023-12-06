@@ -3,7 +3,7 @@
 pragma solidity ^0.8.17;
 
 import {IWETH} from "./IWETH.sol";
-import {IWormhole} from "./IWormhole.sol";
+import {IDeltaswap} from "./IDeltaswap.sol";
 import {ITokenBridge} from "./ITokenBridge.sol";
 
 interface ITokenBridgeRelayer {
@@ -61,7 +61,7 @@ interface ITokenBridgeRelayer {
 
     function bytes32ToAddress(bytes32 address_) external pure returns (address);
 
-    function updateWormholeFinality(uint16 chainId_, uint8 newWormholeFinality) external;
+    function updateDeltaswapFinality(uint16 chainId_, uint8 newDeltaswapFinality) external;
 
     function submitOwnershipTransferRequest(uint16 chainId_, address newOwner) external;
 
@@ -103,7 +103,7 @@ interface ITokenBridgeRelayer {
 
     function tokenBridge() external view returns (ITokenBridge);
 
-    function wormhole() external view returns (IWormhole);
+    function deltaswap() external view returns (IDeltaswap);
 
     function WETH() external view returns (IWETH);
 

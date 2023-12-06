@@ -32,7 +32,7 @@ cp -v foundry.toml cache/foundry.toml
 cp -v foundry-test.toml foundry.toml
 
 ## override environment variables based on deployment network
-export RELEASE_WORMHOLE_ADDRESS=$TESTING_AVAX_WORMHOLE_ADDRESS
+export RELEASE_DELTASWAP_ADDRESS=$TESTING_AVAX_DELTASWAP_ADDRESS
 export RELEASE_BRIDGE_ADDRESS=$TESTING_AVAX_BRIDGE_ADDRESS
 export RELEASE_WETH_ADDRESS=$TESTING_WRAPPED_AVAX_ADDRESS
 export RELEASE_FEE_RECIPIENT=$TESTING_AVAX_FEE_RECIPIENT
@@ -51,7 +51,7 @@ forge script forge-scripts/deploy_wormUSD.sol \
     --broadcast --slow > forge-scripts/deploy.out 2>&1
 
 ## override environment variables based on deployment network
-export RELEASE_WORMHOLE_ADDRESS=$TESTING_ETH_WORMHOLE_ADDRESS
+export RELEASE_DELTASWAP_ADDRESS=$TESTING_ETH_DELTASWAP_ADDRESS
 export RELEASE_BRIDGE_ADDRESS=$TESTING_ETH_BRIDGE_ADDRESS
 export RELEASE_WETH_ADDRESS=$TESTING_WRAPPED_ETH_ADDRESS
 export RELEASE_FEE_RECIPIENT=$TESTING_ETH_FEE_RECIPIENT

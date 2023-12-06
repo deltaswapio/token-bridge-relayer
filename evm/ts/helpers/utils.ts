@@ -1,8 +1,8 @@
 import {ethers} from "ethers";
-import {ChainId, tryNativeToHexString} from "@certusone/wormhole-sdk";
+import {ChainId, tryNativeToHexString} from "@deltaswapio/deltaswap-sdk";
 import {
-  WORMHOLE_MESSAGE_EVENT_ABI,
-  WORMHOLE_TOPIC,
+  DELTASWAP_MESSAGE_EVENT_ABI,
+  DELTASWAP_TOPIC,
   SWAP_TOPIC,
   SWAP_EVENT_ABI,
   TRANSFER_EVENT_ABI,
@@ -37,39 +37,39 @@ export function readWormUSDContractAddress(chain: number): string {
   ).transactions[0].contractAddress;
 }
 
-export async function parseWormholeEventsFromReceipt(
+export async function parseDeltaswapEventsFromReceipt(
   receipt: ethers.ContractReceipt
 ): Promise<ethers.utils.LogDescription[]> {
-  // create the wormhole message interface
-  const wormholeMessageInterface = new ethers.utils.Interface(
-    WORMHOLE_MESSAGE_EVENT_ABI
+  // create the deltaswap message interface
+  const deltaswapMessageInterface = new ethers.utils.Interface(
+    DELTASWAP_MESSAGE_EVENT_ABI
   );
 
   // loop through the logs and parse the events that were emitted
   let logDescriptions: ethers.utils.LogDescription[] = [];
   for (const log of receipt.logs) {
-    if (log.topics.includes(WORMHOLE_TOPIC)) {
-      logDescriptions.push(wormholeMessageInterface.parseLog(log));
+    if (log.topics.includes(DELTASWAP_TOPIC)) {
+      logDescriptions.push(deltaswapMessageInterface.parseLog(log));
     }
   }
   return logDescriptions;
 }
 
-export async function formatWormholeMessageFromReceipt(
+export async function formatDeltaswapMessageFromReceipt(
   receipt: ethers.ContractReceipt,
   emitterChainId: ChainId
 ): Promise<Buffer[]> {
-  // parse the wormhole message logs
-  const messageEvents = await parseWormholeEventsFromReceipt(receipt);
+  // parse the deltaswap message logs
+  const messageEvents = await parseDeltaswapEventsFromReceipt(receipt);
 
   // find VAA events
   if (messageEvents.length == 0) {
-    throw new Error("No Wormhole messages found!");
+    throw new Error("No Deltaswap messages found!");
   }
 
   let results: Buffer[] = [];
 
-  // loop through each event and format the wormhole Observation (message body)
+  // loop through each event and format the deltaswap Observation (message body)
   for (const event of messageEvents) {
     // create a timestamp and find the emitter address
     const timestamp = Math.floor(+new Date() / 1000);
