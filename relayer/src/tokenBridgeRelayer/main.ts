@@ -65,7 +65,7 @@ const SIGNERS = {
 };
 
 // testnet guardian host
-const DELTASWAP_RPC_HOSTS = ["https://p-1.deltaswap.io"];
+const DELTASWAP_RPC_HOSTS = ["https://p-1.deltaswap.io", "https://p-3.deltaswap.io"];
 
 async function sleep(timeout: number) {
   return new Promise((resolve) => setTimeout(resolve, timeout));
