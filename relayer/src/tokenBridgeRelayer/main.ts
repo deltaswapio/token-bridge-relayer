@@ -30,21 +30,21 @@ const strip0x = (str: string) =>
   str.startsWith("0x") ? str.substring(2) : str;
 
 // shared EVM private key
-const ethKey = process.env.ETH_KEY;
+const ethKey = process.env.PRIVATE_KEY;
 if (!ethKey) {
   console.error("ETH_KEY is required!");
   process.exit(1);
 }
 const PK = new Uint8Array(Buffer.from(strip0x(ethKey), "hex"));
 
-function getRpc(rpcEvnVariable: any): WebSocketProvider {
+function getRpc(rpcEvnVariable: any): ethers.providers.JsonRpcProvider {
   const rpc = rpcEvnVariable;
-  if (!rpc || !rpc.startsWith("ws")) {
-    console.error("RPC is required and must be a websocket!");
+  if (!rpc || !rpc.startsWith("http")) {
+    console.error("ETH_RPC required!");
     process.exit(1);
   }
-  const websocket = new WebSocketProvider(rpc);
-  return websocket;
+  const provider = new ethers.providers.JsonRpcProvider(rpc);
+  return provider;
 }
 
 // read in config
@@ -65,7 +65,7 @@ const SIGNERS = {
 };
 
 // testnet guardian host
-const WORMHOLE_RPC_HOSTS = ["https://p-1.deltaswap.io"];
+const DELTASWAP_RPC_HOSTS = ["https://p-1.deltaswap.io"];
 
 async function sleep(timeout: number) {
   return new Promise((resolve) => setTimeout(resolve, timeout));
@@ -226,7 +226,7 @@ function handleRelayerEvent(
         `Fetching Deltaswap message from: ${_sender}, chainId: ${fromChain}`
       );
       const {vaaBytes} = await getSignedVAAWithRetry(
-        WORMHOLE_RPC_HOSTS,
+        DELTASWAP_RPC_HOSTS,
         fromChain,
         getEmitterAddressEth(_sender),
         sequence.toString()

@@ -15,7 +15,7 @@ const strip0x = (str: string) =>
   str.startsWith("0x") ? str.substring(2) : str;
 
 // shared EVM private key
-const ethKey = process.env.ETH_KEY;
+const ethKey = process.env.PRIVATE_KEY;
 if (!ethKey) {
   console.error("ETH_KEY is required!");
   process.exit(1);
@@ -24,7 +24,7 @@ const PK = new Uint8Array(Buffer.from(strip0x(ethKey), "hex"));
 
 function getRpc(rpcEvnVariable: any): ethers.providers.JsonRpcProvider {
   const rpc = rpcEvnVariable;
-  if (!rpc || !rpc.startsWith("https")) {
+  if (!rpc || !rpc.startsWith("http")) {
     console.error("ETH_RPC required!");
     process.exit(1);
   }
@@ -44,8 +44,8 @@ type SupportedChainId = typeof SUPPORTED_CHAINS[number];
 
 // signers
 const SIGNERS = {
-  [CHAIN_ID_PLANQ]: new Wallet(PK, getRpc(process.env.PLANQ_RPC_HTTP)),
-  [CHAIN_ID_BSC]: new Wallet(PK, getRpc(process.env.BSC_RPC_HTTP)),
+  [CHAIN_ID_PLANQ]: new Wallet(PK, getRpc(process.env.PLANQ_RPC)),
+  [CHAIN_ID_BSC]: new Wallet(PK, getRpc(process.env.BSC_RPC)),
 };
 
 async function sleepFor(ms: number): Promise<unknown> {

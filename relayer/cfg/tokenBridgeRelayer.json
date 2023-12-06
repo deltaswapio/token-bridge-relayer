@@ -1,0 +1,12 @@
+{
+  "4": {
+    "bridge": "0xC891aBa0b42818fb4c975Bf6461033c62BCE75ff",
+    "deltaswap": "0x825E560FeBA3Fd7821186b1B9e640a8D712e3EBc",
+    "relayer": "0x18dc5816373175b4107cfA4048937B341f1906b1"
+  },
+  "7070": {
+    "bridge": "0x4FD8625cfE4B0034642140005b78291D26183df1",
+    "deltaswap": "0xF6266C4D2dAC62e3047ad70f490D35c1A771f37D",
+    "relayer": "0xA620d8d694889fd618A5A9432946Fa56d5Fb433a"
+  }
+}

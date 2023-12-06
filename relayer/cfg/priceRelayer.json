@@ -1,0 +1,18 @@
+{
+  "fetchPricesInterval": 60000,
+  "updatePriceChangePercentage": 2,
+  "maxPriceChangePercentage": 25,
+  "pricePrecision": 8,
+  "relayers": [
+    {
+      "chainId": 4,
+      "tokenId": "binancecoin",
+      "tokenContract": "000000000000000000000000bb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+    },
+    {
+      "chainId": 7070,
+      "tokenId": "planq",
+      "tokenContract": "0000000000000000000000005EBCdf1De1781e8B5D41c016B0574aD53E2F6E1A"
+    }
+  ]
+}
