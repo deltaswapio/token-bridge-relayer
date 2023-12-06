@@ -4,6 +4,7 @@ import {
   coalesceChainName,
   getEmitterAddressEth,
   getSignedVAAWithRetry,
+  getSignedVAA,
   uint8ArrayToHex,
   tryUint8ArrayToNative,
   CHAIN_ID_BSC,
@@ -11,7 +12,7 @@ import {
   CHAIN_ID_CELO,
   CHAIN_ID_POLYGON,
   ChainId,
-  tryNativeToHexString, CHAIN_ID_PLANQ
+  tryNativeToHexString, CHAIN_ID_PLANQ, ChainName
 } from "@deltaswapio/deltaswap-sdk";
 import {
   Implementation__factory,
@@ -22,6 +23,7 @@ import { TypedEvent } from "@deltaswapio/deltaswap-sdk/lib/cjs/ethers-contracts/
 import {Contract, ethers, Wallet} from "ethers";
 import {WebSocketProvider} from "./websocket";
 import * as fs from "fs";
+const axios = require("axios"); // import breaks
 
 
 require("dotenv").config();
@@ -225,15 +227,50 @@ function handleRelayerEvent(
       console.log(
         `Fetching Deltaswap message from: ${_sender}, chainId: ${fromChain}`
       );
-      const {vaaBytes} = await getSignedVAAWithRetry(
-        DELTASWAP_RPC_HOSTS,
+      // const {vaaBytes} = await getSignedVAAWithRetry(
+      //   DELTASWAP_RPC_HOSTS,
+      //   fromChain,
+      //   getEmitterAddressEth(_sender),
+      //   sequence.toString(),
+      //   {},
+      //   5000,
+      //   10
+      // );
+
+      let enqueued = await fetchIsVAAEnqueued( DELTASWAP_RPC_HOSTS,
         fromChain,
         getEmitterAddressEth(_sender),
         sequence.toString(),
         {},
         5000,
-        10
+        10)
+
+      while(enqueued) {
+        enqueued = await fetchIsVAAEnqueued( DELTASWAP_RPC_HOSTS,
+          fromChain,
+          getEmitterAddressEth(_sender),
+          sequence.toString(),
+          {},
+          5000,
+          10)
+      }
+
+      let vaaBytes = await getSignedVAA(
+        DELTASWAP_RPC_HOSTS[0],
+        fromChain,
+        getEmitterAddressEth(_sender),
+        sequence.toString(),
       );
+
+      while (!vaaBytes.vaaBytes) {
+        vaaBytes = await getSignedVAA(
+          DELTASWAP_RPC_HOSTS[0],
+          fromChain,
+          getEmitterAddressEth(_sender),
+          sequence.toString(),
+        );
+
+      }
 
       // Parse the token address and find the accepted token
       // address on the target chain.
@@ -316,7 +353,7 @@ function handleRelayerEvent(
       try {
         const tx: ethers.ContractTransaction =
           await relayer.completeTransferWithRelay(
-            `0x${uint8ArrayToHex(vaaBytes)}`,
+            `0x${uint8ArrayToHex(vaaBytes.vaaBytes)}`,
             {
               value: nativeSwapQuote,
             }
@@ -334,6 +371,23 @@ function handleRelayerEvent(
     }
   })();
 }
+
+export const fetchIsVAAEnqueued = async (
+  hosts: string[], emitterChain: ChainId | ChainName, emitterAddress: string, sequence: string, extraGrpcOpts?: {}, retryTimeout?: number, retryAttempts?: number
+): Promise<boolean> => {
+  const url = `${DELTASWAP_RPC_HOSTS}v1/governor/is_vaa_enqueued/${emitterChain}/${emitterAddress}/${sequence}`;
+
+  return axios
+    .get(url)
+    .then(function (response: any) {
+      const data = response.data;
+      if (!data) return false;
+      return data.isEnqueued;
+    })
+    .catch(function (error : any) {
+      throw error;
+    });
+};
 
 function subscribeToEvents(
   deltaswap: ethers.Contract,
