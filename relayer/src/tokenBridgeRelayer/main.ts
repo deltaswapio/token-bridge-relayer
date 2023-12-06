@@ -229,7 +229,10 @@ function handleRelayerEvent(
         DELTASWAP_RPC_HOSTS,
         fromChain,
         getEmitterAddressEth(_sender),
-        sequence.toString()
+        sequence.toString(),
+        {},
+        5000,
+        10
       );
 
       // Parse the token address and find the accepted token
