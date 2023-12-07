@@ -255,22 +255,30 @@ function handleRelayerEvent(
           10)
       }
 
-      let vaaBytes = await getSignedVAA(
-        DELTASWAP_RPC_HOSTS[0],
+       let vaaBytes = await fetchIsVAASigned(
+        DELTASWAP_RPC_HOSTS,
         fromChain,
         getEmitterAddressEth(_sender),
         sequence.toString(),
+        {},
+        5000,
+        10
       );
 
-      while (!vaaBytes.vaaBytes) {
-        vaaBytes = await getSignedVAA(
-          DELTASWAP_RPC_HOSTS[0],
+      while (vaaBytes === undefined || vaaBytes.vaaBytes === undefined || vaaBytes.vaaBytes == '') {
+        vaaBytes = await fetchIsVAASigned(
+          DELTASWAP_RPC_HOSTS,
           fromChain,
           getEmitterAddressEth(_sender),
           sequence.toString(),
+          {},
+          5000,
+          10
         );
-
+        sleep(5000)
       }
+
+      vaaBytes = base64ToArrayBuffer(vaaBytes.vaaBytes)
 
       // Parse the token address and find the accepted token
       // address on the target chain.
@@ -353,7 +361,7 @@ function handleRelayerEvent(
       try {
         const tx: ethers.ContractTransaction =
           await relayer.completeTransferWithRelay(
-            `0x${uint8ArrayToHex(vaaBytes.vaaBytes)}`,
+            `0x${uint8ArrayToHex(vaaBytes)}`,
             {
               value: nativeSwapQuote,
             }
@@ -372,10 +380,19 @@ function handleRelayerEvent(
   })();
 }
 
+function base64ToArrayBuffer(base64 : string) : ArrayBuffer {
+  var binaryString = atob(base64);
+  var bytes = new Uint8Array(binaryString.length);
+  for (var i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
 export const fetchIsVAAEnqueued = async (
   hosts: string[], emitterChain: ChainId | ChainName, emitterAddress: string, sequence: string, extraGrpcOpts?: {}, retryTimeout?: number, retryAttempts?: number
 ): Promise<boolean> => {
-  const url = `${DELTASWAP_RPC_HOSTS}v1/governor/is_vaa_enqueued/${emitterChain}/${emitterAddress}/${sequence}`;
+  const url = `${DELTASWAP_RPC_HOSTS[0]}/v1/governor/is_vaa_enqueued/${emitterChain}/${emitterAddress}/${sequence}`;
 
   return axios
     .get(url)
@@ -385,7 +402,24 @@ export const fetchIsVAAEnqueued = async (
       return data.isEnqueued;
     })
     .catch(function (error : any) {
-      throw error;
+
+    });
+};
+
+export const fetchIsVAASigned = async (
+  hosts: string[], emitterChain: ChainId | ChainName, emitterAddress: string, sequence: string, extraGrpcOpts?: {}, retryTimeout?: number, retryAttempts?: number
+): Promise<any> => {
+  const url = `${DELTASWAP_RPC_HOSTS[0]}/v1/signed_vaa/${emitterChain}/${emitterAddress}/${sequence}`;
+
+  return axios
+    .get(url)
+    .then(function (response: any) {
+      const data = response.data;
+      if (!data) return "";
+      return data;
+    })
+    .catch(function (error : any) {
+
     });
 };
 
