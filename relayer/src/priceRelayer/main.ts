@@ -197,6 +197,8 @@ async function main() {
   console.log("Relayer Config");
   console.log(relayerConfig);
 
+  console.log("Contract Config");
+  console.log(contractConfig);
   // confirm the price precision on each contract
   await confirmPricePrecision(relayerConfig.pricePrecision, contractConfig);
 
