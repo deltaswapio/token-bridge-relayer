@@ -72,7 +72,7 @@ function relayerContract(
     address,
     [
       "function swapRate(address) public view returns (uint256)",
-      "function updateSwapRate(uint16,address,uint256) public",
+      "function updateSwapRate(uint16,(address,uint256)[]) public",
       "function swapRatePrecision() public view returns (uint256)",
     ],
     signer
