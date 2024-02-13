@@ -8,6 +8,9 @@ import {PriceConfig, readPriceConfig, RelayerConfig} from "./config";
 import {ITokenBridge__factory} from "@deltaswapio/deltaswap-sdk/lib/cjs/ethers-contracts";
 const axios = require("axios"); // import breaks
 import * as fs from "fs";
+import {
+  ITokenBridgeRelayer__factory,
+} from "../../../evm/ts/src/ethers-contracts";
 
 require("dotenv").config();
 
@@ -23,7 +26,7 @@ if (!ethKey) {
 const PK = new Uint8Array(Buffer.from(strip0x(ethKey), "hex"));
 
 export interface SwapRateUpdate {
-  token: string | undefined;
+  token: string;
   value: ethers.BigNumber;
 }
 
@@ -64,22 +67,6 @@ function tokenBridgeContract(
   return ITokenBridge__factory.connect(address, signer);
 }
 
-function relayerContract(
-  address: string,
-  signer: ethers.Signer
-): ethers.Contract {
-  const contract = new Contract(
-    address,
-    [
-      "function swapRate(address) public view returns (uint256)",
-      "function updateSwapRate(uint16,(address,uint256)[]) public",
-      "function swapRatePrecision() public view returns (uint256)",
-    ],
-    signer
-  );
-  return contract;
-}
-
 async function confirmPricePrecision(
   expectedPrecision: number,
   contractConfig: any
@@ -87,10 +74,8 @@ async function confirmPricePrecision(
   const pricePrecisionBN = ethers.utils.parseUnits("1", expectedPrecision);
 
   for (const chainId of SUPPORTED_CHAINS) {
-    const relayer = relayerContract(
-      contractConfig[chainId.toString()].relayer,
-      SIGNERS[chainId]
-    );
+    const relayer = ITokenBridgeRelayer__factory.connect(contractConfig[chainId.toString()].relayer, SIGNERS[chainId]);
+
 
     // fetch the contracts swap rate precision
     const swapRatePrecision: ethers.BigNumber =
@@ -161,11 +146,11 @@ async function generateTokenMap(config: RelayerConfig[], contractConfig: any) {
 
 async function main() {
   // read price relayer config
-  const configPath = `${__dirname}/../../cfg/priceRelayer.json`;
+  const configPath = `${__dirname}/../../../../cfg/priceRelayer.json`;
   const relayerConfig = readPriceConfig(configPath);
 
   // read smart contract config
-  const contractConfigPath = `${__dirname}/../../cfg/tokenBridgeRelayer.json`;
+  const contractConfigPath = `${__dirname}/../../../../cfg/tokenBridgeRelayer.json`;
   const contractConfig = JSON.parse(
     fs.readFileSync(contractConfigPath, "utf8")
   );
@@ -221,22 +206,24 @@ async function main() {
         // update contract prices for each supported chain / token
         for (const supportedChainId of SUPPORTED_CHAINS) {
           // set up relayer contract
-          const relayer = relayerContract(
-            contractConfig[supportedChainId.toString()].relayer,
-            SIGNERS[supportedChainId]
-          );
+          const relayer = ITokenBridgeRelayer__factory.connect(contractConfig[supportedChainId.toString()].relayer, SIGNERS[supportedChainId]);
+
 
           for (const config of relayerConfig.relayers) {
             // local token address
             const token = nativeTokenMap
               .get(supportedChainId)
               ?.get(config.tokenContract);
+            if(!token) {
+              continue
+            }
             const tokenId = config.tokenId;
 
             // query the contract to fetch the current native swap price
             const currentPrice: ethers.BigNumber = await relayer.swapRate(
               token
             );
+
             const newPrice = priceUpdates.get(tokenId)!;
 
             // compute percentage change
@@ -257,8 +244,10 @@ async function main() {
                 pricePercentageChange > minPriceChangePercentage &&
                 pricePercentageChange < maxPriceChangePercentage
               ) {
+                console.log(relayer)
                 const swapRateUpdates: SwapRateUpdate[] = [];
                 swapRateUpdates.push({token: token, value: newPrice});
+                console.log(swapRateUpdates)
                 const receipt = await relayer
                   .updateSwapRate(supportedChainId, swapRateUpdates)
                   .then((tx: ethers.ContractTransaction) => tx.wait())
