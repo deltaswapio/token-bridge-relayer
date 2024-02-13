@@ -182,8 +182,6 @@ async function main() {
   console.log("Relayer Config");
   console.log(relayerConfig);
 
-  console.log("Contract Config");
-  console.log(contractConfig);
   // confirm the price precision on each contract
   await confirmPricePrecision(relayerConfig.pricePrecision, contractConfig);
 
@@ -244,10 +242,8 @@ async function main() {
                 pricePercentageChange > minPriceChangePercentage &&
                 pricePercentageChange < maxPriceChangePercentage
               ) {
-                console.log(relayer)
                 const swapRateUpdates: SwapRateUpdate[] = [];
                 swapRateUpdates.push({token: token, value: newPrice});
-                console.log(swapRateUpdates)
                 const receipt = await relayer
                   .updateSwapRate(supportedChainId, swapRateUpdates)
                   .then((tx: ethers.ContractTransaction) => tx.wait())
