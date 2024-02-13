@@ -50,7 +50,7 @@ function getRpc(rpcEvnVariable: any): WebSocketProvider {
 }
 
 // read in config
-const configPath = `${__dirname}/../../cfg/tokenBridgeRelayer.json`;
+const configPath = `${__dirname}/../../../../cfg/tokenBridgeRelayer.json`;
 const CONFIG = JSON.parse(fs.readFileSync(configPath, "utf8"));
 
 // supported chains
