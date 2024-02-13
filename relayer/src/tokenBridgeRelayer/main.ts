@@ -23,6 +23,7 @@ import { TypedEvent } from "@deltaswapio/deltaswap-sdk/lib/cjs/ethers-contracts/
 import {Contract, ethers, Wallet} from "ethers";
 import {WebSocketProvider} from "./websocket";
 import * as fs from "fs";
+import { ITokenBridgeRelayer__factory } from "../../../evm/ts/src/ethers-contracts";
 const axios = require("axios"); // import breaks
 
 
@@ -85,23 +86,6 @@ function tokenBridgeContract(
   signer: ethers.Signer
 ): ethers.Contract {
   return ITokenBridge__factory.connect(address, signer);
-}
-
-function relayerContract(
-  address: string,
-  signer: ethers.Signer
-): ethers.Contract {
-  const contract = new Contract(
-    address,
-    [
-      "function completeTransferWithRelay(bytes) payable",
-      "function calculateNativeSwapAmountOut(address,uint256) view returns (uint256)",
-      "function maxNativeSwapAmount(address) view returns (uint256)",
-      "function WETH() view returns (address)",
-    ],
-    signer
-  );
-  return contract;
 }
 
 async function getLocalTokenAddress(
@@ -317,10 +301,7 @@ function handleRelayerEvent(
       );
 
       // create relayer contract instance
-      const relayer = relayerContract(
-        CONFIG[toChain.toString()].relayer,
-        SIGNERS[toChain as SupportedChainId]
-      );
+      const relayer = ITokenBridgeRelayer__factory.connect(CONFIG[toChain.toString()].relayer, SIGNERS[toChain as SupportedChainId]);
 
       // fetch weth address from the contract
       const targetWethAddress = await relayer.WETH();
