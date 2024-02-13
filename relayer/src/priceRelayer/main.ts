@@ -22,6 +22,11 @@ if (!ethKey) {
 }
 const PK = new Uint8Array(Buffer.from(strip0x(ethKey), "hex"));
 
+export interface SwapRateUpdate {
+  token: string | undefined;
+  value: ethers.BigNumber;
+}
+
 function getRpc(rpcEvnVariable: any): ethers.providers.JsonRpcProvider {
   const rpc = rpcEvnVariable;
   if (!rpc || !rpc.startsWith("http")) {
@@ -250,8 +255,10 @@ async function main() {
                 pricePercentageChange > minPriceChangePercentage &&
                 pricePercentageChange < maxPriceChangePercentage
               ) {
+                const swapRateUpdates: SwapRateUpdate[] = [];
+                swapRateUpdates.push({token: token, value: newPrice});
                 const receipt = await relayer
-                  .updateSwapRate(supportedChainId, token, newPrice)
+                  .updateSwapRate(supportedChainId, swapRateUpdates)
                   .then((tx: ethers.ContractTransaction) => tx.wait())
                   .catch((msg: any) => {
                     // should not happen
